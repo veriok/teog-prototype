@@ -1,6 +1,6 @@
 // js/battle.js — Echoes of Germolles: Battle Engine
 
-const TICK = 0.1; // seconds per tick
+const TICK = 0.2; // seconds per tick
 
 class ActorRuntime {
   constructor(def) {
@@ -9,6 +9,7 @@ class ActorRuntime {
     this.name        = def.name;
     this.role        = def.role;
     this.icon        = def.icon;
+    this.portrait    = def.portrait || null;
     this.subtype     = def.subtype;   // 'paragon' | 'enemy'
     this.subclass    = def.subclass || null; // 'elite' | 'boss' | null
     this.row         = def.row;       // 'front' | 'back'
