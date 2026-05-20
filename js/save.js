@@ -1,0 +1,63 @@
+// js/save.js — Echoes of Germolles: Save System
+
+const SAVE_KEY = 'germolles_save';
+
+const Save = {
+
+  // ── Default state ──────────────────────────────────────────────────────
+  _default() {
+    return {
+      version: 1,
+      currentZone: 'flooded_cellars',
+      currentEventIndex: 0,
+      completedEvents: [],
+      zoneConquered: false,
+      runCount: 0,
+      victories: 0,
+      defeats: 0,
+      savedAt: null,
+    };
+  },
+
+  // ── Load from localStorage ─────────────────────────────────────────────
+  load() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return this._default();
+      const parsed = JSON.parse(raw);
+      // Merge with defaults to handle missing keys from older saves
+      return Object.assign(this._default(), parsed);
+    } catch (e) {
+      console.warn('Save load failed, using defaults:', e);
+      return this._default();
+    }
+  },
+
+  // ── Write to localStorage ──────────────────────────────────────────────
+  write(state) {
+    try {
+      state.savedAt = new Date().toISOString();
+      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+      UI.flashSave();
+    } catch (e) {
+      console.warn('Save write failed:', e);
+    }
+  },
+
+  // ── Wipe all progress ──────────────────────────────────────────────────
+  wipe() {
+    localStorage.removeItem(SAVE_KEY);
+  },
+
+  // ── Check if save exists ───────────────────────────────────────────────
+  exists() {
+    return !!localStorage.getItem(SAVE_KEY);
+  },
+
+  // ── Human-readable timestamp ───────────────────────────────────────────
+  savedAtLabel(state) {
+    if (!state.savedAt) return 'No save data';
+    const d = new Date(state.savedAt);
+    return d.toLocaleString();
+  }
+};

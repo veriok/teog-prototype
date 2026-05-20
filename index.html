@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Echoes of Germolles — Prototype</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── Header ─────────────────────────────────────────────────────── -->
+  <header id="header">
+    <div>
+      <div id="header-title">Echoes of Germolles</div>
+      <div id="header-subtitle">Autobattler RPG · Prototype v0.1</div>
+    </div>
+    <div id="header-controls">
+      <span id="run-stats" style="font-family:var(--font-heading);font-size:0.62rem;color:var(--text-dim);letter-spacing:0.1em;margin-right:8px;"></span>
+      <span id="save-indicator"></span>
+      <button class="btn btn-danger" id="btn-wipe" title="Erase all save data">Wipe Save</button>
+    </div>
+  </header>
+
+  <!-- ── Main ───────────────────────────────────────────────────────── -->
+  <div id="main">
+
+    <!-- Area panel -->
+    <div id="area-panel">
+      <div id="area-info">
+        <div id="area-name">—</div>
+        <div id="area-desc">—</div>
+      </div>
+      <div id="event-track"></div>
+    </div>
+
+    <!-- Battle area -->
+    <div id="battle-area">
+
+      <!-- Enemy team -->
+      <div class="team-section">
+        <div class="team-label">Enemies</div>
+        <div class="team-row" id="enemy-front"></div>
+        <div class="team-row" id="enemy-back" style="margin-left:24px;opacity:0.9;"></div>
+      </div>
+
+      <!-- Divider -->
+      <div id="battle-divider">
+        <div id="battle-divider-text">⚔ &nbsp; battlefield &nbsp; ⚔</div>
+      </div>
+
+      <!-- Player team -->
+      <div class="team-section">
+        <div class="team-label">Paragons</div>
+        <div class="team-row" id="player-front"></div>
+        <div class="team-row" id="player-back" style="margin-left:24px;opacity:0.9;"></div>
+      </div>
+
+      <!-- Loot display (for loot events) -->
+      <div id="loot-display"></div>
+
+    </div>
+
+    <!-- Log panel -->
+    <div id="log-panel">
+      <div id="log-header">
+        <div id="log-title">Chronicle of Battle</div>
+      </div>
+      <div id="log-scroll"></div>
+    </div>
+
+    <!-- Control bar -->
+    <div id="control-bar">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div id="battle-status">Awaiting deployment.</div>
+        <div id="speed-control">
+          <span id="speed-label">Speed</span>
+          <button class="speed-btn active" data-speed="1">1×</button>
+          <button class="speed-btn" data-speed="2">2×</button>
+          <button class="speed-btn" data-speed="4">4×</button>
+        </div>
+      </div>
+      <div id="control-buttons">
+        <button class="btn" id="btn-restart" disabled>↺ Restart Zone</button>
+        <button class="btn btn-primary" id="btn-start">⚔ Engage</button>
+        <button class="btn btn-primary" id="btn-next" disabled>Next Event →</button>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+</div><!-- /app -->
+
+<!-- ── Result banner ──────────────────────────────────────────────────── -->
+<div id="result-banner">
+  <div id="result-banner-text"></div>
+</div>
+
+<!-- ── Modal overlay ──────────────────────────────────────────────────── -->
+<div id="modal-overlay">
+  <div id="modal-box">
+    <div id="modal-title"></div>
+    <div id="modal-body"></div>
+    <div id="modal-buttons"></div>
+  </div>
+</div>
+
+<!-- ── Scripts (order matters) ────────────────────────────────────────── -->
+<script src="js/data.js"></script>
+<script src="js/save.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/battle.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>
