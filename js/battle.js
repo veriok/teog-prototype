@@ -156,8 +156,7 @@ class BattleEngine {
     const rows = eventDef.enemyRows;
     Object.entries(rows).forEach(([row, ids]) => {
       ids.forEach(id => {
-        const def = JSON.parse(JSON.stringify(DATA.actors[id]));
-        def.row = row;
+        const def = { ...DATA.actors[id], row };
         this.enemies.push(new ActorRuntime(def));
       });
     });

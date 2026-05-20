@@ -625,6 +625,14 @@ body {
 .ability-icon.on-cd { opacity: 0.6; }
 .ability-icon.passive { border-color: rgba(90,158,106,0.4); }
 
+/* Special / rage ability (threat-triggered) */
+.ability-icon.special-attack {
+  border-color: rgba(138,90,200,0.6);
+  background: rgba(70,20,120,0.35);
+  box-shadow: 0 0 8px rgba(138,90,200,0.25);
+  color: #c080ff;
+}
+
 /* Threat bar (full-width for enemies) */
 .threat-bar-row {
   padding: 0 10px 6px;

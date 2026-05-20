@@ -176,13 +176,13 @@ const DATA = {
       id: 'fireball', name: 'Fireball', icon: '💥',
       tree: 'fire', tag: 'ranged',
       ranks: [
-        { rank: 1, cooldown: 5.5, cost: null,     primaryDmg: 35, splashDmg: 15, burnStacks: 0 },
-        { rank: 2, cooldown: 5.2, cost: null,     primaryDmg: 48, splashDmg: 22, burnStacks: 0 },
-        { rank: 3, cooldown: 5.0, cost: { type: 'energy', amount: 15 }, primaryDmg: 65, splashDmg: 30, burnStacks: 1 },
+        { rank: 1, cooldown: 5.5, cost: { type: 'energy', amount: 40 }, damage: 35, splashDmg: 15, burnStacks: 0 },
+        { rank: 2, cooldown: 5.2, cost: { type: 'energy', amount: 40 }, damage: 48, splashDmg: 22, burnStacks: 0 },
+        { rank: 3, cooldown: 5.0, cost: { type: 'energy', amount: 40 }, damage: 65, splashDmg: 30, burnStacks: 1 },
       ],
       targeting: 'single_enemy_with_splash',
       execute(caster, targets, rank) {
-        const effects = [{ type: 'damage', target: targets[0], amount: rank.primaryDmg, damageType: 'fire' }];
+        const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'fire' }];
         if (targets[1]) effects.push({ type: 'damage', target: targets[1], amount: rank.splashDmg, damageType: 'fire' });
         if (rank.burnStacks > 0) {
           targets.forEach(t => effects.push({ type: 'apply_status', target: t, statusId: 'burning', stacks: rank.burnStacks, duration: 8 }));
@@ -195,13 +195,13 @@ const DATA = {
       id: 'void_bolt', name: 'Void Bolt', icon: '🌑',
       tree: 'void', tag: 'ranged',
       ranks: [
-        { rank: 1, cooldown: 3.0, cost: null, damage: 18, armorPierce: 0.5 },
-        { rank: 2, cooldown: 3.0, cost: null, damage: 25, armorPierce: 0.5 },
-        { rank: 3, cooldown: 2.8, cost: null, damage: 34, armorPierce: 0.6, slowStacks: 1, slowDuration: 3 },
+        { rank: 1, cooldown: 3.0, cost: null, damage: 18 },
+        { rank: 2, cooldown: 3.0, cost: null, damage: 25 },
+        { rank: 3, cooldown: 2.8, cost: null, damage: 34, slowStacks: 1, slowDuration: 3 },
       ],
       targeting: 'single_enemy_any',
       execute(caster, targets, rank) {
-        const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'magic', armorPierce: rank.armorPierce }];
+        const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'magic'}];
         if (rank.slowStacks) effects.push({ type: 'apply_status', target: targets[0], statusId: 'slow', stacks: rank.slowStacks, duration: rank.slowDuration });
         return effects;
       }
@@ -211,8 +211,8 @@ const DATA = {
       id: 'entropy_field', name: 'Entropy Field', icon: '🌀',
       tree: 'void', tag: 'ranged',
       ranks: [
-        { rank: 1, cooldown: 10.0, cost: null,                       slowStacks: 2, slowDuration: 5 },
-        { rank: 2, cooldown: 9.5,  cost: { type: 'energy', amount: 15 }, slowStacks: 3, slowDuration: 6 },
+        { rank: 1, cooldown: 10.0, cost: { type: 'energy', amount: 15 }, slowStacks: 1, slowDuration: 5 },
+        { rank: 2, cooldown: 9.5,  cost: { type: 'energy', amount: 15 }, slowStacks: 2, slowDuration: 6 },
         { rank: 3, cooldown: 9.0,  cost: { type: 'energy', amount: 20 }, slowStacks: 3, slowDuration: 8, threatDrain: 15 },
       ],
       targeting: 'all_enemies',

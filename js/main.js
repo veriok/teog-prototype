@@ -135,6 +135,7 @@ const Game = {
     this.engine.setSpeed(this.speedMult);
 
     UI.buildBattleCards(this.engine);
+    requestAnimationFrame(() => UI.equalizeCardHeights());
     UI.setStatus('Battle in progress...', 'active');
 
     document.getElementById('btn-start').disabled = true;
@@ -204,9 +205,6 @@ const Game = {
 
     Save.write(this.state);
     this._applyEventToUI();
-
-    document.getElementById('btn-start').disabled = false;
-    document.getElementById('btn-next').disabled  = true;
   },
 
   // ── Restart zone ───────────────────────────────────────────────────────

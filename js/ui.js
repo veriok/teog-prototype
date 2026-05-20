@@ -151,6 +151,17 @@ const UI = {
       el.addEventListener('mouseleave', () => this._hideTooltip());
       container.appendChild(el);
     });
+
+    // Special / rage attack icon (threat-triggered)
+    if (actor.specialAttack) {
+      const el = document.createElement('div');
+      el.className = 'ability-icon special-attack';
+      el.dataset.role = 'special';
+      el.textContent = actor.specialAttack.icon;
+      el.addEventListener('mouseenter', e => this._showSpecialTooltip(e, actor));
+      el.addEventListener('mouseleave', () => this._hideTooltip());
+      container.appendChild(el);
+    }
   },
 
   // ── Update all cards from engine state ────────────────────────────────
@@ -237,6 +248,35 @@ const UI = {
       el.classList.toggle('ready',  ab.currentCooldown <= 0);
       el.classList.toggle('on-cd',  ab.currentCooldown > 0);
     });
+
+    // Swap special icon on phase 2 transition
+    const spEl = card.querySelector('[data-role="special"]');
+    if (spEl && actor.phase2Active && actor.phase2SpecialAttack) {
+      spEl.textContent = actor.phase2SpecialAttack.icon;
+    }
+  },
+
+  // ── Equalize card heights across row slots ──────────────────────────────
+  equalizeCardHeights() {
+    const colIds = ['bf-player-back', 'bf-player-front', 'bf-enemy-front', 'bf-enemy-back'];
+    const cols = colIds.map(id => {
+      const el = document.getElementById(id);
+      return el ? [...el.querySelectorAll('.actor-card')] : [];
+    });
+    const maxSlots = Math.max(...cols.map(c => c.length), 0);
+
+    // Reset all min-heights so we measure natural sizes
+    cols.forEach(col => col.forEach(c => c.style.minHeight = ''));
+
+    // Force a reflow to get accurate offsetHeights
+    void document.getElementById('battlefield-grid')?.offsetHeight;
+
+    // Apply max height per slot row across all columns
+    for (let i = 0; i < maxSlots; i++) {
+      const cards = cols.map(c => c[i]).filter(Boolean);
+      const maxH  = Math.max(...cards.map(c => c.offsetHeight));
+      cards.forEach(c => c.style.minHeight = `${maxH}px`);
+    }
   },
 
   // ── Flash effects ──────────────────────────────────────────────────────
@@ -266,14 +306,52 @@ const UI = {
   // ── Tooltip ────────────────────────────────────────────────────────────
   _showTooltip(e, ability) {
     const rank = ability.rankDef;
-    let html = `<strong>${ability.name}</strong>`;
-    html += `<div class="tt-cd">Cooldown: ${rank.cooldown}s</div>`;
-    if (rank.cost) html += `<div class="tt-res">Cost: ${rank.cost.amount} ${rank.cost.type}</div>`;
-    if (rank.damage)    html += `<div class="tt-dmg">Damage: ${rank.damage}</div>`;
+    const dtype = rank.damageType
+      ? ` <span style="color:var(--text-dim);font-size:0.75rem">(${rank.damageType})</span>`
+      : '';
+
+    let html = `<strong>${ability.icon} ${ability.name}</strong>`;
+    html += `<div class="tt-cd">CD: ${rank.cooldown}s</div>`;
+    if (rank.cost)         html += `<div class="tt-res">Cost: ${rank.cost.amount} ${rank.cost.type}</div>`;
+
+    // Damage
+    if (rank.damage)       html += `<div class="tt-dmg">Damage: ${rank.damage}${dtype}</div>`;
+    if (rank.splashDmg)    html += `<div class="tt-dmg">Splash: ${rank.splashDmg}${dtype}</div>`;
+
+    // Crowd-control / status
     if (rank.stunDuration) html += `<div>Stun: ${rank.stunDuration}s</div>`;
-    if (rank.guardStacks)  html += `<div>Guard: ${rank.guardStacks} stacks</div>`;
-    if (rank.hasteStacks)  html += `<div>Haste: ${rank.hasteStacks} stacks (${rank.hasteDuration}s)</div>`;
+    if (rank.rootDuration) html += `<div>Root: ${rank.rootDuration}s</div>`;
+    if (rank.stacks)       html += `<div>Bleed: +${rank.stacks} stacks (${rank.duration}s)</div>`;
+    if (rank.burnChance && rank.burnChance > 0)
+                           html += `<div>Burn chance: ${Math.round(rank.burnChance * 100)}%</div>`;
+    if (rank.burnStacks)   html += `<div>Burn: +${rank.burnStacks} stacks (8s)</div>`;
+    if (rank.slowStacks)   html += `<div>Slow: +${rank.slowStacks} stacks (${rank.slowDuration}s)</div>`;
+    if (rank.hasteStacks)  html += `<div>Haste: +${rank.hasteStacks} stacks (${rank.hasteDuration}s)</div>`;
+
+    // Defensive / utility
+    if (rank.guardStacks)  html += `<div>Guard: +${rank.guardStacks} stacks (12s)</div>`;
+    if (rank.healHp)       html += `<div>Heal: ${rank.healHp} HP</div>`;
+    if (rank.armorRestore) html += `<div>Restore Armor: +${rank.armorRestore}</div>`;
+    if (rank.threatDrain)  html += `<div>Drain Threat: ${rank.threatDrain}</div>`;
+    if (rank.selfThreat)   html += `<div>Gain Threat: +${rank.selfThreat}</div>`;
+
     html += `<div style="margin-top:4px;font-style:italic;color:#7a6e8a">Rank ${ability.currentRank}</div>`;
+    this._tooltip.innerHTML = html;
+    this._tooltip.style.display = 'block';
+    this._moveTooltip(e);
+  },
+
+  _showSpecialTooltip(e, actor) {
+    const sp = actor.phase2Active && actor.phase2SpecialAttack
+      ? actor.phase2SpecialAttack
+      : actor.specialAttack;
+    const resourceLabel = actor.resourceType === 'threat' ? 'Threat' : 'Rage';
+    let html = `<strong>${sp.icon} ${sp.name}</strong>`;
+    html += `<div style="color:var(--text-void);font-size:0.75rem;margin-top:3px">Activates at 100 ${resourceLabel}</div>`;
+    if (sp.isPhaseTransition)
+      html += `<div style="color:var(--text-gold);font-size:0.75rem;margin-top:2px">— Phase Transition —</div>`;
+    if (!actor.phase2Active && actor.phase2SpecialAttack)
+      html += `<div style="color:var(--text-dim);font-size:0.72rem;margin-top:2px">Phase 2 special unlocks after transition</div>`;
     this._tooltip.innerHTML = html;
     this._tooltip.style.display = 'block';
     this._moveTooltip(e);
