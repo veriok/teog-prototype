@@ -19,31 +19,40 @@ const UI = {
   buildBattleCards(engine) {
     this._cards.clear();
 
-    // Player side
-    const playerFront = document.getElementById('player-front');
-    const playerBack  = document.getElementById('player-back');
-    playerFront.innerHTML = '';
-    playerBack.innerHTML  = '';
+    const MAX_SLOTS = 3;
 
-    engine.paragons.forEach(actor => {
-      const card = this._buildCard(actor);
-      this._cards.set(actor.id, card);
-      const row = actor.row === 'front' ? playerFront : playerBack;
-      row.appendChild(card);
-    });
+    const fillCol = (colId, actors) => {
+      const col = document.getElementById(colId);
+      if (!col) return;
+      col.querySelectorAll('.actor-card').forEach(c => c.remove());
+      for (let i = 0; i < MAX_SLOTS; i++) {
+        if (actors[i]) {
+          const card = this._buildCard(actors[i]);
+          this._cards.set(actors[i].id, card);
+          col.appendChild(card);
+        } else {
+          col.appendChild(this._buildEmptyCard());
+        }
+      }
+    };
 
-    // Enemy side
-    const enemyFront = document.getElementById('enemy-front');
-    const enemyBack  = document.getElementById('enemy-back');
-    enemyFront.innerHTML = '';
-    enemyBack.innerHTML  = '';
+    fillCol('bf-player-back',  engine.paragons.filter(a => a.row === 'back'));
+    fillCol('bf-player-front', engine.paragons.filter(a => a.row === 'front'));
+    fillCol('bf-enemy-front',  engine.enemies.filter(a => a.row === 'front'));
+    fillCol('bf-enemy-back',   engine.enemies.filter(a => a.row === 'back'));
+  },
 
-    engine.enemies.forEach(actor => {
-      const card = this._buildCard(actor);
-      this._cards.set(actor.id, card);
-      const row = actor.row === 'front' ? enemyFront : enemyBack;
-      row.appendChild(card);
-    });
+  // ── Empty card placeholder ─────────────────────────────────────────────
+  _buildEmptyCard() {
+    const card = document.createElement('div');
+    card.className = 'actor-card empty';
+    return card;
+  },
+
+  // ── Actor death event bridge ───────────────────────────────────────────
+  actorDied(actor) {
+    const card = this._cards.get(actor.id);
+    if (card) card.dispatchEvent(new CustomEvent('actor:died'));
   },
 
   // ── Build a single actor card ─────────────────────────────────────────
@@ -91,7 +100,7 @@ const UI = {
           </div>
           <div class="bar-val" data-val="armor">${actor.currentArmor}/${actor.maxArmor}</div>
         </div>
-        ${actor.resourceType !== 'none' ? `
+        ${actor.resourceType !== 'none' && actor.resourceType !== 'threat' ? `
         <div class="bar-row">
           <div class="bar-label">${this._resourceLabel(actor.resourceType)}</div>
           <div class="bar-track">
@@ -114,6 +123,9 @@ const UI = {
       </div>` : ''}
       <div class="death-overlay">✝</div>
     `;
+
+    // Death event: card owns its own dead-state transition
+    card.addEventListener('actor:died', () => card.classList.add('dead'));
 
     // Build ability icons
     this._buildAbilityIcons(card, actor);
@@ -151,11 +163,8 @@ const UI = {
   },
 
   _updateCard(card, actor) {
-    // Dead state
-    if (actor.isDead) {
-      card.classList.add('dead');
-      return;
-    }
+    // Skip dead actors — death overlay is handled by the actor:died event
+    if (actor.isDead) return;
 
     // HP bar
     this._updateBar(card, 'hp', actor.currentHP, actor.maxHP);
@@ -163,8 +172,8 @@ const UI = {
     // Armor bar
     this._updateBar(card, 'armor', actor.currentArmor, actor.maxArmor);
 
-    // Resource bar
-    if (actor.resourceType !== 'none') {
+    // Resource bar (not rendered for threat-type — the dedicated threat bar handles it)
+    if (actor.resourceType !== 'none' && actor.resourceType !== 'threat') {
       this._updateBar(card, 'resource', actor.resource, actor.resourceMax);
     }
 

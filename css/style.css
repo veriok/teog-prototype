@@ -36,7 +36,7 @@
   --glow-void:      rgba(80,40,120,0.2);
 
   --card-w:         210px;
-  --card-h:         290px;
+  --card-h:         220px;
   --transition:     0.2s ease;
 
   --font-title:     'Cinzel Decorative', serif;
@@ -57,8 +57,8 @@ body {
   color: var(--text-parchment);
   font-family: var(--font-body);
   font-size: 1rem;
-  min-height: 100vh;
-  overflow-x: hidden;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* ── Scrollbar ─────────────────────────────────────────────────────────── */
@@ -70,7 +70,8 @@ body {
 #app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
@@ -154,9 +155,19 @@ body {
 /* ── Main content area ───────────────────────────────────────────────────── */
 #main {
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+/* ── Right panel ─────────────────────────────────────────────────────────── */
+#right-panel {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  overflow: hidden;
 }
 
 /* ── Area panel (top) ────────────────────────────────────────────────────── */
@@ -236,10 +247,75 @@ body {
 /* ── Battle area ─────────────────────────────────────────────────────────── */
 #battle-area {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
   padding: 20px 28px;
   gap: 16px;
+}
+
+/* ── Battlefield label ───────────────────────────────────────────────────── */
+#battle-area-label {
+  font-family: var(--font-heading);
+  font-size: 0.58rem;
+  letter-spacing: 0.3em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#battle-area-label::before,
+#battle-area-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-dim), transparent);
+}
+
+/* ── Battlefield grid ────────────────────────────────────────────────────── */
+#battlefield-grid {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.bf-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: var(--card-w);
+}
+
+.bf-col-label {
+  font-family: var(--font-heading);
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 2px 0 4px;
+}
+
+.bf-vs-divider {
+  width: 1px;
+  align-self: stretch;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, transparent 5%, var(--border-dim) 20%, var(--border-dim) 80%, transparent 95%);
+  margin: 0 12px;
+}
+
+/* Empty card placeholder — same footprint as a filled card */
+.actor-card.empty {
+  height: var(--card-h);
+  border: 1px dashed #1a1828;
+  background: rgba(8, 7, 12, 0.3);
+  pointer-events: none;
 }
 
 .team-section {
@@ -636,10 +712,13 @@ body {
 
 /* ── Battle log ──────────────────────────────────────────────────────────── */
 #log-panel {
-  border-top: 1px solid var(--border-dim);
+  width: 300px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-dim);
   background: rgba(5,4,8,0.95);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 #log-header {
@@ -659,7 +738,8 @@ body {
 }
 
 #log-scroll {
-  height: 130px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 8px 28px;
   display: flex;
@@ -695,7 +775,7 @@ body {
 /* ── Control bar ─────────────────────────────────────────────────────────── */
 #control-bar {
   padding: 12px 28px;
-  border-top: 1px solid var(--border-dim);
+  border-bottom: 1px solid var(--border-dim);
   display: flex;
   align-items: center;
   justify-content: space-between;

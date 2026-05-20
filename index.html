@@ -26,43 +26,7 @@
   <!-- ── Main ───────────────────────────────────────────────────────── -->
   <div id="main">
 
-    <!-- Area panel -->
-    <div id="area-panel">
-      <div id="area-info">
-        <div id="area-name">—</div>
-        <div id="area-desc">—</div>
-      </div>
-      <div id="event-track"></div>
-    </div>
-
-    <!-- Battle area -->
-    <div id="battle-area">
-
-      <!-- Enemy team -->
-      <div class="team-section">
-        <div class="team-label">Enemies</div>
-        <div class="team-row" id="enemy-front"></div>
-        <div class="team-row" id="enemy-back" style="margin-left:24px;opacity:0.9;"></div>
-      </div>
-
-      <!-- Divider -->
-      <div id="battle-divider">
-        <div id="battle-divider-text">⚔ &nbsp; battlefield &nbsp; ⚔</div>
-      </div>
-
-      <!-- Player team -->
-      <div class="team-section">
-        <div class="team-label">Paragons</div>
-        <div class="team-row" id="player-front"></div>
-        <div class="team-row" id="player-back" style="margin-left:24px;opacity:0.9;"></div>
-      </div>
-
-      <!-- Loot display (for loot events) -->
-      <div id="loot-display"></div>
-
-    </div>
-
-    <!-- Log panel -->
+    <!-- Left column: battle log -->
     <div id="log-panel">
       <div id="log-header">
         <div id="log-title">Chronicle of Battle</div>
@@ -70,23 +34,63 @@
       <div id="log-scroll"></div>
     </div>
 
-    <!-- Control bar -->
-    <div id="control-bar">
-      <div style="display:flex;align-items:center;gap:16px;">
-        <div id="battle-status">Awaiting deployment.</div>
-        <div id="speed-control">
-          <span id="speed-label">Speed</span>
-          <button class="speed-btn active" data-speed="1">1×</button>
-          <button class="speed-btn" data-speed="2">2×</button>
-          <button class="speed-btn" data-speed="4">4×</button>
+    <!-- Right column: area info + controls + battlefield -->
+    <div id="right-panel">
+
+      <!-- Area panel -->
+      <div id="area-panel">
+        <div id="area-info">
+          <div id="area-name">—</div>
+          <div id="area-desc">—</div>
+        </div>
+        <div id="event-track"></div>
+      </div>
+
+      <!-- Control bar — top of right panel -->
+      <div id="control-bar">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div id="battle-status">Awaiting deployment.</div>
+          <div id="speed-control">
+            <span id="speed-label">Speed</span>
+            <button class="speed-btn active" data-speed="1">1×</button>
+            <button class="speed-btn" data-speed="2">2×</button>
+            <button class="speed-btn" data-speed="4">4×</button>
+          </div>
+        </div>
+        <div id="control-buttons">
+          <button class="btn" id="btn-restart" disabled>↺ Restart Zone</button>
+          <button class="btn btn-primary" id="btn-start">⚔ Engage</button>
+          <button class="btn btn-primary" id="btn-next" disabled>Next Event →</button>
         </div>
       </div>
-      <div id="control-buttons">
-        <button class="btn" id="btn-restart" disabled>↺ Restart Zone</button>
-        <button class="btn btn-primary" id="btn-start">⚔ Engage</button>
-        <button class="btn btn-primary" id="btn-next" disabled>Next Event →</button>
+
+      <!-- Battle area -->
+      <div id="battle-area">
+
+        <div id="battle-area-label">⚔ &nbsp; battlefield &nbsp; ⚔</div>
+
+        <div id="battlefield-grid">
+          <div class="bf-col" id="bf-player-back">
+            <div class="bf-col-label">Back</div>
+          </div>
+          <div class="bf-col" id="bf-player-front">
+            <div class="bf-col-label">Front</div>
+          </div>
+          <div class="bf-vs-divider"></div>
+          <div class="bf-col" id="bf-enemy-front">
+            <div class="bf-col-label">Front</div>
+          </div>
+          <div class="bf-col" id="bf-enemy-back">
+            <div class="bf-col-label">Back</div>
+          </div>
+        </div>
+
+        <!-- Loot display (for loot events) -->
+        <div id="loot-display"></div>
+
       </div>
-    </div>
+
+    </div><!-- /right-panel -->
 
   </div><!-- /main -->
 

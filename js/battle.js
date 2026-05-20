@@ -128,11 +128,12 @@ class ActorRuntime {
 
 // ─────────────────────────────────────────────────────────────────────────────
 class BattleEngine {
-  constructor(eventDef, onTick, onLog, onBattleEnd) {
+  constructor(eventDef, onTick, onLog, onBattleEnd, onActorDied) {
     this.eventDef    = eventDef;
-    this.onTick      = onTick;   // called after each tick for UI updates
-    this.onLog       = onLog;    // (message, type) => void
-    this.onBattleEnd = onBattleEnd; // ('victory'|'defeat') => void
+    this.onTick      = onTick;       // called after each tick for UI updates
+    this.onLog       = onLog;        // (message, type) => void
+    this.onBattleEnd = onBattleEnd;  // ('victory'|'defeat') => void
+    this.onActorDied = onActorDied || (() => {});  // (actor) => void
 
     this.paragons    = [];
     this.enemies     = [];
@@ -247,9 +248,10 @@ class BattleEngine {
     // ── Phase 3: Death check ─────────────────────────────────────────────
     const justDied = living.filter(a => a.currentHP <= 0 && !a.isDead);
     justDied.forEach(actor => {
-      actor.isDead   = true;
+      actor.isDead    = true;
       actor.currentHP = 0;
       this.log(`${actor.name} has fallen.`, 'death');
+      this.onActorDied(actor);
     });
 
     // ── Phase 4: Victory check ────────────────────────────────────────────
@@ -258,10 +260,12 @@ class BattleEngine {
       const paragonsAlive = this.paragons.filter(p => !p.isDead);
 
       if (enemiesAlive.length === 0) {
+        this.onTick(this);
         this._endBattle('victory');
         return;
       }
       if (paragonsAlive.length === 0) {
+        this.onTick(this);
         this._endBattle('defeat');
         return;
       }

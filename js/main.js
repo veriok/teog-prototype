@@ -90,11 +90,10 @@ const Game = {
 
   // ── Show loot event (no battle) ────────────────────────────────────────
   _showLootEvent(ev) {
-    const playerFront = document.getElementById('player-front');
-    const playerBack  = document.getElementById('player-back');
-    const enemyFront  = document.getElementById('enemy-front');
-    const enemyBack   = document.getElementById('enemy-back');
-    [playerFront, playerBack, enemyFront, enemyBack].forEach(el => el && (el.innerHTML = ''));
+    ['bf-player-back', 'bf-player-front', 'bf-enemy-front', 'bf-enemy-back'].forEach(id => {
+      const col = document.getElementById(id);
+      if (col) col.querySelectorAll('.actor-card').forEach(c => c.remove());
+    });
 
     const lootArea = document.getElementById('loot-display');
     if (lootArea) {
@@ -126,9 +125,10 @@ const Game = {
 
     this.engine = new BattleEngine(
       ev,
-      (eng) => this._onTick(eng),
-      (msg, type) => UI.log(msg, type),
-      (result) => this._onBattleEnd(result)
+      (eng)         => this._onTick(eng),
+      (msg, type)   => UI.log(msg, type),
+      (result)      => this._onBattleEnd(result),
+      (actor)       => UI.actorDied(actor)
     );
 
     this.engine.init(['aldric', 'ysolde'], ev);
