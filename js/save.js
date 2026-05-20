@@ -1,8 +1,10 @@
 // js/save.js — Echoes of Germolles: Save System
 
+import { UI } from './ui.js';
+
 const SAVE_KEY = 'germolles_save';
 
-const Save = {
+export const Save = {
 
   // ── Default state ──────────────────────────────────────────────────────
   _default() {

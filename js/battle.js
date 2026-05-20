@@ -1,8 +1,11 @@
 // js/battle.js — Echoes of Germolles: Battle Engine
 
+import { DATA } from './data/index.js';
+import { UI }   from './ui.js';
+
 const TICK = 0.2; // seconds per tick
 
-class ActorRuntime {
+export class ActorRuntime {
   constructor(def) {
     this.id          = def.id;
     this.defId       = def.id;
@@ -127,7 +130,7 @@ class ActorRuntime {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-class BattleEngine {
+export class BattleEngine {
   constructor(eventDef, onTick, onLog, onBattleEnd, onActorDied) {
     this.eventDef    = eventDef;
     this.onTick      = onTick;       // called after each tick for UI updates

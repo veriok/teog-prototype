@@ -1,5 +1,10 @@
 // js/main.js — Echoes of Germolles: Entry Point & Game State
 
+import { DATA }         from './data/index.js';
+import { Save }         from './save.js';
+import { UI }           from './ui.js';
+import { BattleEngine } from './battle.js';
+
 const Game = {
 
   state:          null,   // persisted save state

@@ -1,6 +1,8 @@
 // js/ui.js — Echoes of Germolles: UI Rendering
 
-const UI = {
+import { DATA } from './data/index.js';
+
+export const UI = {
 
   // ── Card registry: actorId -> DOM element ─────────────────────────────
   _cards: new Map(),
