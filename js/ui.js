@@ -473,4 +473,113 @@ const UI = {
     el.classList.add('visible');
     setTimeout(() => el.classList.remove('visible'), 1800);
   },
+
+  // ── Tab navigation ─────────────────────────────────────────────────────
+  switchTab(tabId) {
+    document.querySelectorAll('.nav-tab').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tabId);
+    });
+    document.querySelectorAll('.tab-panel').forEach(panel => {
+      panel.classList.toggle('active', panel.id === `tab-${tabId}`);
+    });
+  },
+
+  // ── Quest sub-view switching ───────────────────────────────────────────
+  showLocationSelect() {
+    const ls = document.getElementById('quest-location-select');
+    const qb = document.getElementById('quest-battle');
+    if (ls) ls.style.display = '';
+    if (qb) qb.style.display = 'none';
+  },
+
+  showBattleView() {
+    const ls = document.getElementById('quest-location-select');
+    const qb = document.getElementById('quest-battle');
+    if (ls) ls.style.display = 'none';
+    if (qb) qb.style.display = '';
+  },
+
+  // ── Location select rendering ──────────────────────────────────────────
+  renderLocationSelect(locations, locationProgress, onSelect) {
+    const map = document.getElementById('castle-map');
+    if (!map) return;
+    map.innerHTML = '';
+
+    locations.forEach(loc => {
+      const prog = locationProgress[loc.id] || { completedEvents: [], zoneConquered: false };
+
+      const pin = document.createElement('button');
+      pin.className = 'location-pin';
+      if (loc.stub)           pin.classList.add('stub');
+      if (prog.zoneConquered) pin.classList.add('conquered');
+      pin.dataset.locationId = loc.id;
+      pin.style.left = `${loc.mapX}%`;
+      pin.style.top  = `${loc.mapY}%`;
+
+      const icon = prog.zoneConquered ? '✓' : (loc.stub ? '✦' : '⚔');
+      pin.innerHTML = `
+        <div class="pin-marker">${icon}</div>
+        <div class="pin-label">${loc.name}</div>
+      `;
+
+      if (!loc.stub) {
+        pin.addEventListener('click', () => {
+          this._selectLocationPin(loc, locationProgress);
+          if (onSelect) onSelect(loc.id);
+        });
+      }
+
+      map.appendChild(pin);
+    });
+  },
+
+  _selectLocationPin(loc, locationProgress) {
+    // Highlight pin
+    document.querySelectorAll('.location-pin').forEach(p => p.classList.remove('selected'));
+    const pin = document.querySelector(`[data-location-id="${loc.id}"]`);
+    if (pin) pin.classList.add('selected');
+
+    const prog = locationProgress[loc.id] || { completedEvents: [], zoneConquered: false, currentEventIndex: 0 };
+    const total = loc.events.length;
+
+    // Show sidebar detail
+    const noSel  = document.getElementById('loc-no-selection');
+    const detail = document.getElementById('loc-detail');
+    if (noSel)  noSel.style.display  = 'none';
+    if (detail) detail.style.display = '';
+
+    const nameEl   = document.getElementById('loc-name');
+    const descEl   = document.getElementById('loc-desc');
+    const statusEl = document.getElementById('loc-status');
+    const battleBtn = document.getElementById('btn-to-battle');
+
+    if (nameEl)   nameEl.textContent = loc.name;
+    if (descEl)   descEl.textContent = loc.description;
+
+    if (statusEl) {
+      statusEl.className = '';
+      if (prog.zoneConquered) {
+        statusEl.textContent = '✓ Conquered';
+        statusEl.classList.add('conquered');
+      } else if (prog.completedEvents.length > 0) {
+        statusEl.textContent = `${prog.completedEvents.length} / ${total} encounters cleared`;
+        statusEl.classList.add('in-progress');
+      } else {
+        statusEl.textContent = 'Untouched';
+      }
+    }
+
+    if (battleBtn) {
+      battleBtn.disabled = prog.zoneConquered;
+    }
+  },
+
+  // ── Reset location sidebar to no-selection state ───────────────────────
+  resetLocationSidebar() {
+    const noSel  = document.getElementById('loc-no-selection');
+    const detail = document.getElementById('loc-detail');
+    if (noSel)  noSel.style.display  = '';
+    if (detail) detail.style.display = 'none';
+    document.querySelectorAll('.location-pin').forEach(p => p.classList.remove('selected'));
+  },
 };

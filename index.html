@@ -23,8 +23,89 @@
     </div>
   </header>
 
-  <!-- ── Main ───────────────────────────────────────────────────────── -->
-  <div id="main">
+  <!-- ── Navigation Tabs ────────────────────────────────────────────── -->
+  <nav id="nav-tabs">
+    <button class="nav-tab" data-tab="castle">⛩ Castle</button>
+    <button class="nav-tab active" data-tab="quest">⚔ Quest</button>
+    <button class="nav-tab" data-tab="paragons">☽ Paragons</button>
+    <button class="nav-tab" data-tab="inventory">⚗ Inventory</button>
+    <button class="nav-tab" data-tab="settings">✦ Settings</button>
+    <button class="nav-tab" data-tab="export">📜 Export</button>
+  </nav>
+
+  <!-- ── Tab Content ────────────────────────────────────────────────── -->
+  <div id="tab-content">
+
+    <!-- Castle tab -->
+    <div class="tab-panel" id="tab-castle">
+      <div class="tab-placeholder">
+        <div class="tab-placeholder-title">Castle of Germolles</div>
+        <div class="tab-placeholder-text">Castle overview — coming in a future update.</div>
+      </div>
+    </div>
+
+    <!-- Quest tab -->
+    <div class="tab-panel active" id="tab-quest">
+
+      <!-- Sub-view: Location Select -->
+      <div id="quest-location-select">
+        <div id="castle-map-wrap">
+          <svg id="castle-map-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="hatch" x="0" y="0" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="3" stroke="#1a1828" stroke-width="0.6"/>
+              </pattern>
+            </defs>
+            <rect width="100" height="100" fill="#06050a"/>
+            <polygon points="6,6 94,6 94,94 6,94" fill="#09080d" stroke="#2a2438" stroke-width="1.5"/>
+            <circle cx="6"  cy="6"  r="5" fill="#0e0c1a" stroke="#3a3050" stroke-width="0.8"/>
+            <circle cx="94" cy="6"  r="5" fill="#0e0c1a" stroke="#3a3050" stroke-width="0.8"/>
+            <circle cx="6"  cy="94" r="5" fill="#0e0c1a" stroke="#3a3050" stroke-width="0.8"/>
+            <circle cx="94" cy="94" r="5" fill="#0e0c1a" stroke="#3a3050" stroke-width="0.8"/>
+            <line x1="6"  y1="50" x2="94" y2="50" stroke="#1a1828" stroke-width="0.4" stroke-dasharray="1,2"/>
+            <line x1="50" y1="6"  x2="50" y2="94" stroke="#1a1828" stroke-width="0.4" stroke-dasharray="1,2"/>
+            <rect x="38" y="38" width="24" height="24" fill="#100e1a" stroke="#3a3050" stroke-width="1"/>
+            <line x1="50" y1="38" x2="50" y2="62" stroke="#1e1c2a" stroke-width="0.5"/>
+            <line x1="38" y1="50" x2="62" y2="50" stroke="#1e1c2a" stroke-width="0.5"/>
+            <rect x="68" y="14" width="18" height="24" fill="#0e0c18" stroke="#2a2438" stroke-width="0.8"/>
+            <path d="M68,18 Q60,26 68,34" fill="none" stroke="#2a2438" stroke-width="0.6"/>
+            <line x1="77" y1="15" x2="77" y2="21" stroke="#2a2438" stroke-width="0.7"/>
+            <line x1="74" y1="17" x2="80" y2="17" stroke="#2a2438" stroke-width="0.7"/>
+            <rect x="10" y="64" width="22" height="20" fill="url(#hatch)" stroke="#1a1828" stroke-width="0.8"/>
+            <path d="M12,70 Q17,68 22,70 Q27,72 32,70" fill="none" stroke="#1a2030" stroke-width="0.5"/>
+            <path d="M12,75 Q17,73 22,75 Q27,77 32,75" fill="none" stroke="#1a2030" stroke-width="0.5"/>
+            <path d="M12,80 Q17,78 22,80 Q27,82 32,80" fill="none" stroke="#1a2030" stroke-width="0.5"/>
+            <rect x="44" y="89" width="12" height="9" fill="#0b0a10" stroke="#2a2438" stroke-width="0.8"/>
+            <line x1="47" y1="89" x2="47" y2="98" stroke="#1e1c2a" stroke-width="0.5"/>
+            <line x1="50" y1="89" x2="50" y2="98" stroke="#1e1c2a" stroke-width="0.5"/>
+            <line x1="53" y1="89" x2="53" y2="98" stroke="#1e1c2a" stroke-width="0.5"/>
+            <rect x="70" y="55" width="18" height="20" fill="#0e0c18" stroke="#1e1c2a" stroke-width="0.6"/>
+            <rect x="44" y="62" width="12" height="8"  fill="#0a0910" stroke="none"/>
+            <rect x="44" y="30" width="12" height="8"  fill="#0a0910" stroke="none"/>
+            <rect x="30" y="44" width="8"  height="12" fill="#0a0910" stroke="none"/>
+            <rect x="62" y="44" width="8"  height="12" fill="#0a0910" stroke="none"/>
+            <polygon points="90,83 91.2,87 90,86 88.8,87" fill="#2a2438"/>
+            <text x="90" y="91" fill="#2a2438" font-size="2.8" font-family="serif" text-anchor="middle">N</text>
+            <text x="50" y="4.5" fill="#2a2438" font-size="1.8" font-family="serif" text-anchor="middle" letter-spacing="0.6">PLAN DU CHÂTEAU DE GERMOLLES</text>
+          </svg>
+          <div id="castle-map"></div>
+        </div>
+
+        <aside id="location-sidebar">
+          <div id="loc-no-selection">
+            <div class="loc-sidebar-hint">Select a location<br>to marshal your forces.</div>
+          </div>
+          <div id="loc-detail" style="display:none">
+            <div id="loc-name"></div>
+            <div id="loc-desc"></div>
+            <div id="loc-status"></div>
+            <button class="btn btn-primary" id="btn-to-battle">⚔ To Battle</button>
+          </div>
+        </aside>
+      </div><!-- /quest-location-select -->
+
+      <!-- Sub-view: Battle -->
+      <div id="quest-battle" style="display:none">
 
     <!-- Left column: battle log -->
     <div id="log-panel">
@@ -46,23 +127,24 @@
         <div id="event-track"></div>
       </div>
 
-      <!-- Control bar — top of right panel -->
-      <div id="control-bar">
-        <div style="display:flex;align-items:center;gap:16px;">
-          <div id="battle-status">Awaiting deployment.</div>
-          <div id="speed-control">
-            <span id="speed-label">Speed</span>
-            <button class="speed-btn active" data-speed="1">1×</button>
-            <button class="speed-btn" data-speed="2">2×</button>
-            <button class="speed-btn" data-speed="4">4×</button>
+          <!-- Control bar -->
+          <div id="control-bar">
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div id="battle-status">Awaiting deployment.</div>
+              <div id="speed-control">
+                <span id="speed-label">Speed</span>
+                <button class="speed-btn active" data-speed="1">1×</button>
+                <button class="speed-btn" data-speed="2">2×</button>
+                <button class="speed-btn" data-speed="4">4×</button>
+              </div>
+            </div>
+            <div id="control-buttons">
+              <button class="btn" id="btn-back-to-map">← Map</button>
+              <button class="btn" id="btn-restart" disabled>↺ Restart</button>
+              <button class="btn btn-primary" id="btn-start">⚔ Engage</button>
+              <button class="btn btn-primary" id="btn-next" disabled>Next →</button>
+            </div>
           </div>
-        </div>
-        <div id="control-buttons">
-          <button class="btn" id="btn-restart" disabled>↺ Restart Zone</button>
-          <button class="btn btn-primary" id="btn-start">⚔ Engage</button>
-          <button class="btn btn-primary" id="btn-next" disabled>Next Event →</button>
-        </div>
-      </div>
 
       <!-- Battle area -->
       <div id="battle-area">
@@ -90,9 +172,44 @@
 
       </div>
 
-    </div><!-- /right-panel -->
+        </div><!-- /right-panel -->
+      </div><!-- /quest-battle -->
 
-  </div><!-- /main -->
+    </div><!-- /tab-quest -->
+
+    <!-- Paragons tab -->
+    <div class="tab-panel" id="tab-paragons">
+      <div class="tab-placeholder">
+        <div class="tab-placeholder-title">Paragons</div>
+        <div class="tab-placeholder-text">Hero management — coming in a future update.</div>
+      </div>
+    </div>
+
+    <!-- Inventory tab -->
+    <div class="tab-panel" id="tab-inventory">
+      <div class="tab-placeholder">
+        <div class="tab-placeholder-title">Inventory</div>
+        <div class="tab-placeholder-text">Equipment &amp; supplies — coming in a future update.</div>
+      </div>
+    </div>
+
+    <!-- Settings tab -->
+    <div class="tab-panel" id="tab-settings">
+      <div class="tab-placeholder">
+        <div class="tab-placeholder-title">Settings</div>
+        <div class="tab-placeholder-text">Game options — coming in a future update.</div>
+      </div>
+    </div>
+
+    <!-- Export tab -->
+    <div class="tab-panel" id="tab-export">
+      <div class="tab-placeholder">
+        <div class="tab-placeholder-title">Export</div>
+        <div class="tab-placeholder-text">Save data export — coming in a future update.</div>
+      </div>
+    </div>
+
+  </div><!-- /tab-content -->
 
 </div><!-- /app -->
 

@@ -7,11 +7,11 @@ const Save = {
   // ── Default state ──────────────────────────────────────────────────────
   _default() {
     return {
-      version: 1,
-      currentZone: 'flooded_cellars',
-      currentEventIndex: 0,
-      completedEvents: [],
-      zoneConquered: false,
+      version: 2,
+      selectedLocationId: null,
+      locationProgress: {
+        flooded_cellars: { currentEventIndex: 0, completedEvents: [], zoneConquered: false }
+      },
       runCount: 0,
       victories: 0,
       defeats: 0,
@@ -25,7 +25,20 @@ const Save = {
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return this._default();
       const parsed = JSON.parse(raw);
-      // Merge with defaults to handle missing keys from older saves
+      // Migrate v1 → v2 (flat zone progress → per-location map)
+      if ((parsed.version || 1) < 2) {
+        const migrated = this._default();
+        migrated.runCount  = parsed.runCount  || 0;
+        migrated.victories = parsed.victories || 0;
+        migrated.defeats   = parsed.defeats   || 0;
+        migrated.savedAt   = parsed.savedAt   || null;
+        migrated.locationProgress.flooded_cellars = {
+          currentEventIndex: parsed.currentEventIndex || 0,
+          completedEvents:   parsed.completedEvents   || [],
+          zoneConquered:     parsed.zoneConquered     || false,
+        };
+        return migrated;
+      }
       return Object.assign(this._default(), parsed);
     } catch (e) {
       console.warn('Save load failed, using defaults:', e);

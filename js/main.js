@@ -2,29 +2,48 @@
 
 const Game = {
 
-  state:  null,   // persisted save state
-  engine: null,   // active BattleEngine
-  zone:   null,   // current zone def
-  speedMult: 1,
+  state:          null,   // persisted save state
+  engine:         null,   // active BattleEngine
+  activeLocation: null,   // current DATA.locations entry (when in battle view)
+  speedMult:      1,
+  _defeatReturnTimer: null,
 
   // ── Boot ───────────────────────────────────────────────────────────────
   init() {
     UI.init();
     this.state = Save.load();
-    this.zone  = DATA.zone; // MVP: single zone
 
-    this._buildStaticUI();
-    this._applyEventToUI();
+    this._initNavTabs();
+    this._initBattleControls();
 
-    document.getElementById('btn-start').addEventListener('click',    () => this._onStartBattle());
-    document.getElementById('btn-restart').addEventListener('click',  () => this._onRestartZone());
-    document.getElementById('btn-next').addEventListener('click',     () => this._onNextEvent());
-    document.getElementById('btn-wipe').addEventListener('click',     () => this._onWipe());
+    UI.switchTab('quest');
+    UI.showLocationSelect();
+    UI.renderLocationSelect(DATA.locations, this.state.locationProgress, locId => {
+      this.state.selectedLocationId = locId;
+    });
+
+    this._refreshStats();
+  },
+
+  // ── Nav tabs ───────────────────────────────────────────────────────────
+  _initNavTabs() {
+    document.querySelectorAll('.nav-tab').forEach(btn => {
+      btn.addEventListener('click', () => UI.switchTab(btn.dataset.tab));
+    });
+  },
+
+  // ── Wire all battle-view controls ─────────────────────────────────────
+  _initBattleControls() {
+    document.getElementById('btn-to-battle').addEventListener('click',  () => this._onEnterBattle());
+    document.getElementById('btn-back-to-map').addEventListener('click',() => this._onBackToMap());
+    document.getElementById('btn-start').addEventListener('click',      () => this._onStartBattle());
+    document.getElementById('btn-restart').addEventListener('click',    () => this._onRestartZone());
+    document.getElementById('btn-next').addEventListener('click',       () => this._onNextEvent());
+    document.getElementById('btn-wipe').addEventListener('click',       () => this._onWipe());
     document.getElementById('modal-overlay').addEventListener('click', e => {
       if (e.target === document.getElementById('modal-overlay')) UI.closeModal();
     });
 
-    // Speed buttons
     document.querySelectorAll('.speed-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
@@ -33,43 +52,91 @@ const Game = {
         if (this.engine) this.engine.setSpeed(this.speedMult);
       });
     });
+  },
 
+  // ── Enter battle view for the selected location ────────────────────────
+  _onEnterBattle() {
+    const locId = this.state.selectedLocationId;
+    if (!locId) return;
+    const loc = DATA.locations.find(l => l.id === locId);
+    if (!loc || loc.stub) return;
+
+    this.activeLocation = loc;
+    UI.showBattleView();
+    this._buildBattleStaticUI();
+    this._applyEventToUI();
     UI.setStatus('Ready — deploy your Paragons.', '');
   },
 
-  // ── Build static UI elements ───────────────────────────────────────────
-  _buildStaticUI() {
-    const area = document.getElementById('area-name');
-    const desc = document.getElementById('area-desc');
-    if (area) area.textContent = this.zone.name;
-    if (desc) desc.textContent = this.zone.description;
+  // ── Return to location map ─────────────────────────────────────────────
+  _onBackToMap() {
+    const doReturn = () => {
+      if (this._defeatReturnTimer) { clearTimeout(this._defeatReturnTimer); this._defeatReturnTimer = null; }
+      if (this.engine) { this.engine.stop(); this.engine = null; }
+      this.activeLocation = null;
+      this.state.selectedLocationId = null;
+      Save.write(this.state);
+      UI.clearLog();
+      UI.showLocationSelect();
+      UI.renderLocationSelect(DATA.locations, this.state.locationProgress, locId => {
+        this.state.selectedLocationId = locId;
+      });
+      UI.resetLocationSidebar();
+    };
 
-    UI.buildEventTrack(this.zone, this.state.currentEventIndex);
-
-    // Stats in header
-    const statsEl = document.getElementById('run-stats');
-    if (statsEl) {
-      statsEl.textContent = `Runs: ${this.state.runCount}  |  V: ${this.state.victories}  D: ${this.state.defeats}`;
+    if (this.engine && this.engine.active) {
+      UI.showModal(
+        'Withdraw Forces',
+        'Your paragons retreat. Progress on this encounter is preserved — you may return and continue.',
+        [
+          { label: 'Withdraw', cls: 'btn-danger', action: doReturn },
+          { label: 'Hold',     cls: '',            action: null }
+        ]
+      );
+    } else {
+      doReturn();
     }
   },
 
-  // ── Apply current event state to UI ───────────────────────────────────
-  _applyEventToUI() {
-    const idx = this.state.currentEventIndex;
-    const ev  = this.zone.events[idx];
+  // ── Per-location progress helper ───────────────────────────────────────
+  _getLocProgress() {
+    const id = this.activeLocation.id;
+    if (!this.state.locationProgress[id]) {
+      this.state.locationProgress[id] = { currentEventIndex: 0, completedEvents: [], zoneConquered: false };
+    }
+    return this.state.locationProgress[id];
+  },
 
-    UI.buildEventTrack(this.zone, idx);
+  // ── Build static header for the battle view ────────────────────────────
+  _buildBattleStaticUI() {
+    const loc  = this.activeLocation;
+    const prog = this._getLocProgress();
+    const area = document.getElementById('area-name');
+    const desc = document.getElementById('area-desc');
+    if (area) area.textContent = loc.name;
+    if (desc) desc.textContent = loc.description;
+    UI.buildEventTrack(loc, prog.currentEventIndex);
+    this._refreshStats();
+  },
+
+  // ── Apply current event state to battle UI ─────────────────────────────
+  _applyEventToUI() {
+    const prog = this._getLocProgress();
+    const idx  = prog.currentEventIndex;
+    const ev   = this.activeLocation.events[idx];
+
+    UI.buildEventTrack(this.activeLocation, idx);
 
     const startBtn   = document.getElementById('btn-start');
     const nextBtn    = document.getElementById('btn-next');
     const restartBtn = document.getElementById('btn-restart');
 
-    if (this.state.zoneConquered) {
-      UI.setStatus('The Flooded Cellars are conquered. Victory eternal.', 'victory');
+    if (prog.zoneConquered) {
+      UI.setStatus(`${this.activeLocation.name} — conquered.`, 'victory');
       startBtn.disabled   = true;
       nextBtn.disabled    = true;
       restartBtn.disabled = false;
-      this._showLootEvent({ loot: ['All locations conquered — glory to Germolles!'] });
+      this._showLootEvent({ loot: ['All encounters cleared — the location is yours.'] });
       return;
     }
 
@@ -88,13 +155,12 @@ const Game = {
     }
   },
 
-  // ── Show loot event (no battle) ────────────────────────────────────────
+  // ── Show loot event ────────────────────────────────────────────────────
   _showLootEvent(ev) {
     ['bf-player-back', 'bf-player-front', 'bf-enemy-front', 'bf-enemy-back'].forEach(id => {
       const col = document.getElementById(id);
       if (col) col.querySelectorAll('.actor-card').forEach(c => c.remove());
     });
-
     const lootArea = document.getElementById('loot-display');
     if (lootArea) {
       lootArea.innerHTML = ev.loot
@@ -113,11 +179,11 @@ const Game = {
 
   // ── Start battle ───────────────────────────────────────────────────────
   _onStartBattle() {
-    const idx = this.state.currentEventIndex;
-    const ev  = this.zone.events[idx];
+    const prog = this._getLocProgress();
+    const idx  = prog.currentEventIndex;
+    const ev   = this.activeLocation.events[idx];
     if (!ev || ev.type === 'loot') return;
 
-    // Stop any existing engine
     if (this.engine) { this.engine.stop(); this.engine = null; }
 
     UI.clearLog();
@@ -125,10 +191,10 @@ const Game = {
 
     this.engine = new BattleEngine(
       ev,
-      (eng)         => this._onTick(eng),
-      (msg, type)   => UI.log(msg, type),
-      (result)      => this._onBattleEnd(result),
-      (actor)       => UI.actorDied(actor)
+      (eng)       => this._onTick(eng),
+      (msg, type) => UI.log(msg, type),
+      (result)    => this._onBattleEnd(result),
+      (actor)     => UI.actorDied(actor)
     );
 
     this.engine.init(['aldric', 'ysolde'], ev);
@@ -157,31 +223,42 @@ const Game = {
   // ── Battle end callback ────────────────────────────────────────────────
   _onBattleEnd(result) {
     UI.showResult(result);
-    UI.setStatus(result === 'victory' ? 'Victory! Advance.' : 'Defeat. Regroup.', result);
+    const prog = this._getLocProgress();
 
     if (result === 'victory') {
+      UI.setStatus('Victory! The path ahead clears.', 'victory');
       this.state.victories++;
       document.getElementById('btn-next').disabled = false;
+      prog.completedEvents.push(prog.currentEventIndex);
 
-      const idx = this.state.currentEventIndex;
-      this.state.completedEvents.push(idx);
-
-      // Check zone complete
-      if (idx >= this.zone.events.length - 1) {
-        this.state.zoneConquered = true;
-        UI.setStatus('Zone Conquered! The Cellars are yours.', 'victory');
-        UI.log('The Flooded Cellars have been conquered. The Chapel awaits.', 'system');
+      if (prog.currentEventIndex >= this.activeLocation.events.length - 1) {
+        prog.zoneConquered = true;
+        UI.setStatus(`${this.activeLocation.name} — conquered.`, 'victory');
+        UI.log(`${this.activeLocation.name} has fallen. The paragons hold.`, 'system');
       }
 
     } else {
+      UI.setStatus('Defeat. Your forces are routed.', 'defeat');
       this.state.defeats++;
-      // Reset zone progress on defeat
-      this.state.currentEventIndex = 0;
-      this.state.completedEvents   = [];
-      document.getElementById('btn-start').disabled   = false;
-      document.getElementById('btn-restart').disabled = false;
-      UI.log('The location resets. The siege force regroups.', 'system');
-      UI.buildEventTrack(this.zone, 0);
+      // Reset location progress on defeat
+      prog.currentEventIndex = 0;
+      prog.completedEvents   = [];
+      UI.log('Defeat. The survivors retreat to the castle.', 'system');
+
+      // Return to map after the banner clears
+      this._defeatReturnTimer = setTimeout(() => {
+        this._defeatReturnTimer = null;
+        if (this.engine) { this.engine.stop(); this.engine = null; }
+        this.activeLocation = null;
+        this.state.selectedLocationId = null;
+        Save.write(this.state);
+        UI.clearLog();
+        UI.showLocationSelect();
+        UI.renderLocationSelect(DATA.locations, this.state.locationProgress, locId => {
+          this.state.selectedLocationId = locId;
+        });
+        UI.resetLocationSidebar();
+      }, 3600);
     }
 
     Save.write(this.state);
@@ -190,12 +267,13 @@ const Game = {
 
   // ── Next event ─────────────────────────────────────────────────────────
   _onNextEvent() {
-    if (this.state.zoneConquered) return;
+    const prog = this._getLocProgress();
+    if (prog.zoneConquered) return;
 
-    this.state.currentEventIndex++;
+    prog.currentEventIndex++;
 
-    if (this.state.currentEventIndex >= this.zone.events.length) {
-      this.state.zoneConquered = true;
+    if (prog.currentEventIndex >= this.activeLocation.events.length) {
+      prog.zoneConquered = true;
       Save.write(this.state);
       this._applyEventToUI();
       return;
@@ -211,19 +289,20 @@ const Game = {
   _onRestartZone() {
     UI.showModal(
       'Retreat & Regroup',
-      'Abandon current progress and reset the location? All event progress will be lost.',
+      'Reset all progress in this location? Completed encounters will be lost.',
       [
-        { label: 'Retreat', cls: 'btn-danger', action: () => this._doRestart() },
-        { label: 'Stay', cls: '', action: null }
+        { label: 'Reset', cls: 'btn-danger', action: () => this._doRestart() },
+        { label: 'Stay',  cls: '',           action: null }
       ]
     );
   },
 
   _doRestart() {
     if (this.engine) { this.engine.stop(); this.engine = null; }
-    this.state.currentEventIndex = 0;
-    this.state.completedEvents   = [];
-    this.state.zoneConquered     = false;
+    const prog = this._getLocProgress();
+    prog.currentEventIndex = 0;
+    prog.completedEvents   = [];
+    prog.zoneConquered     = false;
     Save.write(this.state);
     UI.clearLog();
     this._applyEventToUI();
@@ -237,20 +316,22 @@ const Game = {
   _onWipe() {
     UI.showModal(
       'Erase All Progress',
-      'This will permanently delete all save data, statistics, and zone progress. There is no undoing this.',
+      'This will permanently delete all save data, statistics, and location progress. There is no undoing this.',
       [
         {
           label: 'Erase Everything', cls: 'btn-danger', action: () => {
+            if (this._defeatReturnTimer) { clearTimeout(this._defeatReturnTimer); this._defeatReturnTimer = null; }
             if (this.engine) { this.engine.stop(); this.engine = null; }
             Save.wipe();
-            this.state = Save.load();
+            this.state          = Save.load();
+            this.activeLocation = null;
             UI.clearLog();
-            this._buildStaticUI();
-            this._applyEventToUI();
-            UI.setStatus('Progress erased. Begin anew.', '');
-            document.getElementById('btn-start').disabled   = false;
-            document.getElementById('btn-next').disabled    = true;
-            document.getElementById('btn-restart').disabled = true;
+            UI.showLocationSelect();
+            UI.renderLocationSelect(DATA.locations, this.state.locationProgress, locId => {
+              this.state.selectedLocationId = locId;
+            });
+            UI.resetLocationSidebar();
+            this._refreshStats();
           }
         },
         { label: 'Cancel', cls: '', action: null }

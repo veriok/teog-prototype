@@ -152,8 +152,8 @@ body {
   pointer-events: none;
 }
 
-/* ── Main content area ───────────────────────────────────────────────────── */
-#main {
+/* ── Quest battle view (replaces old #main) ─────────────────────────────── */
+#quest-battle {
   flex: 1;
   min-height: 0;
   display: flex;
@@ -1009,3 +1009,251 @@ body {
   border-color: var(--border-bright);
   color: var(--text-parchment);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAVIGATION TABS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#nav-tabs {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border-dim);
+  background: linear-gradient(180deg, rgba(8,7,14,0.99) 0%, rgba(10,9,18,0.96) 100%);
+  padding: 0 20px;
+  flex-shrink: 0;
+  gap: 2px;
+}
+
+.nav-tab {
+  font-family: var(--font-heading);
+  font-size: 0.63rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  bottom: -1px;
+}
+
+.nav-tab:hover {
+  color: var(--text-parchment);
+  background: rgba(74,61,106,0.1);
+}
+
+.nav-tab.active {
+  color: var(--text-gold);
+  border-bottom-color: var(--text-gold);
+}
+
+/* ── Tab content area ─────────────────────────────────────────────────────── */
+#tab-content {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.tab-panel {
+  display: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.tab-panel.active {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Stub tab placeholder ─────────────────────────────────────────────────── */
+.tab-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.tab-placeholder-title {
+  font-family: var(--font-title);
+  font-size: 1.2rem;
+  color: var(--border-bright);
+  letter-spacing: 0.08em;
+}
+
+.tab-placeholder-text {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   QUEST TAB — LOCATION SELECT
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#quest-location-select {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+/* ── Castle map ──────────────────────────────────────────────────────────── */
+#castle-map-wrap {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  background: #06050a;
+}
+
+#castle-map-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.7;
+}
+
+#castle-map {
+  position: absolute;
+  inset: 0;
+}
+
+/* ── Location pins ───────────────────────────────────────────────────────── */
+.location-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  z-index: 2;
+  transition: var(--transition);
+}
+
+.location-pin.stub {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.pin-marker {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-dim);
+  background: rgba(13,11,20,0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: var(--transition);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+.location-pin:not(.stub):hover .pin-marker {
+  border-color: var(--border-gold);
+  background: rgba(30,22,8,0.95);
+  box-shadow: 0 0 14px var(--glow-gold);
+}
+
+.location-pin.selected .pin-marker {
+  border-color: var(--text-gold);
+  background: rgba(30,22,8,0.95);
+  box-shadow: 0 0 20px var(--glow-gold);
+}
+
+.location-pin.conquered .pin-marker {
+  border-color: #3a6a40;
+  color: var(--text-green);
+}
+
+.pin-label {
+  font-family: var(--font-heading);
+  font-size: 0.54rem;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-shadow: 0 1px 6px #000, 0 0 12px #000;
+  max-width: 100px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.location-pin:not(.stub):hover .pin-label,
+.location-pin.selected .pin-label {
+  color: var(--text-gold);
+}
+
+/* ── Location sidebar ─────────────────────────────────────────────────────── */
+#location-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border-dim);
+  background: linear-gradient(180deg, rgba(8,7,14,0.98) 0%, var(--bg-deep) 100%);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+#loc-no-selection {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+}
+
+.loc-sidebar-hint {
+  font-size: 0.84rem;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.8;
+  text-align: center;
+}
+
+#loc-detail {
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#loc-name {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  color: var(--text-gold);
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+}
+
+#loc-desc {
+  font-size: 0.84rem;
+  color: var(--text-parchment);
+  font-style: italic;
+  line-height: 1.65;
+  border-top: 1px solid var(--border-dim);
+  padding-top: 14px;
+}
+
+#loc-status {
+  font-family: var(--font-heading);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+#loc-status.conquered   { color: var(--text-green); }
+#loc-status.in-progress { color: var(--text-gold); }
