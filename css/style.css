@@ -1237,7 +1237,7 @@ body {
   min-width: 0;
   position: relative;
   overflow: hidden;
-  background: #08070e url('assets/locations/castle_map.png') center/cover no-repeat;
+  background: #08070e url('../assets/locations/castle_map.png') center/cover no-repeat;
 }
 
 /* Subtle darkening overlay so pins read clearly */

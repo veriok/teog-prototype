@@ -6,7 +6,7 @@ export const locations = [
     name: 'The Flooded Cellars',
     description: 'A collapsed wine cellar beneath the east wing, half-submerged in black water. Torches gutter above the waterline.',
     icon: 'assets/locations/unknown.png',
-    mapX: 22, mapY: 74,
+    mapX: 50, mapY: 51,
     events: [
       {
         index: 0, type: 'fight', label: 'Patrol',

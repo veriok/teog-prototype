@@ -3,7 +3,7 @@
 import { DATA } from './data/index.js';
 import { UI }   from './ui.js';
 
-const TICK = 0.2; // seconds per tick
+const TICK = 0.5; // seconds per tick
 
 export class ActorRuntime {
   constructor(def) {
