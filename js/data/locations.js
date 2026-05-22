@@ -5,6 +5,7 @@ export const locations = [
     id: 'flooded_cellars',
     name: 'The Flooded Cellars',
     description: 'A collapsed wine cellar beneath the east wing, half-submerged in black water. Torches gutter above the waterline.',
+    icon: 'assets/locations/unknown.png',
     mapX: 22, mapY: 74,
     events: [
       {
@@ -37,6 +38,7 @@ export const locations = [
     id: 'ruined_gatehouse',
     name: 'The Ruined Gatehouse',
     description: 'The iron portcullis was bent inward by some forgotten siege. The upper floors groan under the weight of something that refuses to leave.',
+    icon: 'assets/locations/unknown.png',
     mapX: 50, mapY: 92,
     stub: true,
     events: []
@@ -45,6 +47,7 @@ export const locations = [
     id: 'chapel_of_ash',
     name: 'The Chapel of Ash',
     description: 'Where the keep\'s faithful once gathered in devotion, only cold cinders remain. A wind that does not move the candles carries whispered prayers.',
+    icon: 'assets/locations/unknown.png',
     mapX: 76, mapY: 29,
     stub: true,
     events: []

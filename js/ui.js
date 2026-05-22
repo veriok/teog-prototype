@@ -503,6 +503,50 @@ export const UI = {
 
   // ── Location select rendering ──────────────────────────────────────────
   renderLocationSelect(locations, locationProgress, onSelect) {
+    this._renderLocList(locations, locationProgress, onSelect);
+    this._renderLocPins(locations, locationProgress, onSelect);
+  },
+
+  _renderLocList(locations, locationProgress, onSelect) {
+    const panel = document.getElementById('loc-list-panel');
+    if (!panel) return;
+    panel.innerHTML = '';
+
+    locations.forEach(loc => {
+      const prog = locationProgress[loc.id] || { completedEvents: [], zoneConquered: false };
+
+      const item = document.createElement('div');
+      item.className = 'loc-list-item';
+      if (loc.stub) item.classList.add('stub');
+      item.dataset.locationId = loc.id;
+
+      const badgeHTML = prog.zoneConquered ? '<div class="loc-hex-badge">✓</div>' : '';
+      const iconHTML  = loc.icon
+        ? `<img class="loc-list-icon-img" src="${loc.icon}" alt="${loc.name}"
+                onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        : '';
+      const fallbackHTML = `<div class="loc-list-icon-fallback" style="${loc.icon ? 'display:none' : ''}">⚔</div>`;
+
+      item.innerHTML = `
+        <div class="loc-list-icon-wrap">
+          ${iconHTML}${fallbackHTML}${badgeHTML}
+        </div>
+        <span class="loc-list-name">${loc.name}</span>
+        <div class="loc-list-cb ${prog.zoneConquered ? 'checked' : ''}"></div>
+      `;
+
+      if (!loc.stub) {
+        item.addEventListener('click', () => {
+          this._selectLocation(loc, locationProgress);
+          if (onSelect) onSelect(loc.id);
+        });
+      }
+
+      panel.appendChild(item);
+    });
+  },
+
+  _renderLocPins(locations, locationProgress, onSelect) {
     const map = document.getElementById('castle-map');
     if (!map) return;
     map.innerHTML = '';
@@ -518,15 +562,22 @@ export const UI = {
       pin.style.left = `${loc.mapX}%`;
       pin.style.top  = `${loc.mapY}%`;
 
-      const icon = prog.zoneConquered ? '✓' : (loc.stub ? '✦' : '⚔');
+      const badgeHTML = prog.zoneConquered ? '<div class="pin-hex-badge">✓</div>' : '';
+      const iconHTML  = loc.icon
+        ? `<img class="pin-icon-img" src="${loc.icon}" alt="${loc.name}"
+                onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        : '';
+      const fallbackHTML = `<div class="pin-icon-fallback" style="${loc.icon ? 'display:none' : ''}">⚔</div>`;
+
       pin.innerHTML = `
-        <div class="pin-marker">${icon}</div>
-        <div class="pin-label">${loc.name}</div>
+        <div class="pin-icon-wrap">
+          ${iconHTML}${fallbackHTML}${badgeHTML}
+        </div>
       `;
 
       if (!loc.stub) {
         pin.addEventListener('click', () => {
-          this._selectLocationPin(loc, locationProgress);
+          this._selectLocation(loc, locationProgress);
           if (onSelect) onSelect(loc.id);
         });
       }
@@ -535,28 +586,27 @@ export const UI = {
     });
   },
 
-  _selectLocationPin(loc, locationProgress) {
-    // Highlight pin
-    document.querySelectorAll('.location-pin').forEach(p => p.classList.remove('selected'));
-    const pin = document.querySelector(`[data-location-id="${loc.id}"]`);
-    if (pin) pin.classList.add('selected');
+  _selectLocation(loc, locationProgress) {
+    // Sync selection on list items and map pins
+    document.querySelectorAll('.loc-list-item').forEach(el =>
+      el.classList.toggle('selected', el.dataset.locationId === loc.id));
+    document.querySelectorAll('.location-pin').forEach(el =>
+      el.classList.toggle('selected', el.dataset.locationId === loc.id));
 
-    const prog = locationProgress[loc.id] || { completedEvents: [], zoneConquered: false, currentEventIndex: 0 };
+    const prog  = locationProgress[loc.id] || { completedEvents: [], zoneConquered: false, currentEventIndex: 0 };
     const total = loc.events.length;
 
-    // Show sidebar detail
-    const noSel  = document.getElementById('loc-no-selection');
-    const detail = document.getElementById('loc-detail');
-    if (noSel)  noSel.style.display  = 'none';
-    if (detail) detail.style.display = '';
+    // Show right detail panel
+    const panel = document.getElementById('loc-detail-panel');
+    if (panel) panel.style.display = '';
 
-    const nameEl   = document.getElementById('loc-name');
-    const descEl   = document.getElementById('loc-desc');
-    const statusEl = document.getElementById('loc-status');
+    const nameEl    = document.getElementById('loc-name');
+    const descEl    = document.getElementById('loc-desc');
+    const statusEl  = document.getElementById('loc-status');
     const battleBtn = document.getElementById('btn-to-battle');
 
-    if (nameEl)   nameEl.textContent = loc.name;
-    if (descEl)   descEl.textContent = loc.description;
+    if (nameEl)  nameEl.textContent = loc.name;
+    if (descEl)  descEl.textContent = loc.description;
 
     if (statusEl) {
       statusEl.className = '';
@@ -572,16 +622,16 @@ export const UI = {
     }
 
     if (battleBtn) {
-      battleBtn.disabled = prog.zoneConquered;
+      battleBtn.disabled = prog.zoneConquered || !!loc.stub;
     }
   },
 
   // ── Reset location sidebar to no-selection state ───────────────────────
   resetLocationSidebar() {
-    const noSel  = document.getElementById('loc-no-selection');
-    const detail = document.getElementById('loc-detail');
-    if (noSel)  noSel.style.display  = '';
-    if (detail) detail.style.display = 'none';
+    document.querySelectorAll('.loc-list-item').forEach(p => p.classList.remove('selected'));
     document.querySelectorAll('.location-pin').forEach(p => p.classList.remove('selected'));
+    const panel = document.getElementById('loc-detail-panel');
+    if (panel) panel.style.display = 'none';
   },
 };
+
