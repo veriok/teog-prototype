@@ -23,6 +23,7 @@ export const locations = [
       },
       {
         index: 2, type: EventType.LOOT, label: 'Cache',
+        cinematicId: 'chest_found',
         loot: [
           { type: 'item',     definitionId: 'drowned_sword', chance: 0.70, unique: false },
           { type: 'currency', currency: Currency.SOULS,      chance: 1.0,  min: 5, max: 15 },
@@ -35,6 +36,7 @@ export const locations = [
       },
       {
         index: 4, type: EventType.BOSS, label: 'Sergeant',
+        cinematicId: 'boss_intro_sergeant',
         enemies: ['drowned_sergeant'],
         enemyRows: { front: ['drowned_sergeant'], back: [] }
       }

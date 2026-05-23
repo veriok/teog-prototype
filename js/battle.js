@@ -194,6 +194,9 @@ export class BattleEngine {
     this.speedMult = mult;
   }
 
+  pause()  { this.stop(); }
+  resume() { if (!this.active && !this.ended) this.start(); }
+
   _scheduleNext() {
     if (!this.active) return;
     this.tickTimer = setTimeout(() => {

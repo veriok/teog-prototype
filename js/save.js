@@ -20,6 +20,7 @@ export const Save = {
       uniqueDroppedItems: [],
       currencies: { souls: 0 },
       inventoryCapacity: 20,
+      introPlayed: false,
       savedAt: null,
     };
   },

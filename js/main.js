@@ -8,6 +8,7 @@ import { Inventory }         from './inventory.js';
 import { InventoryUI }       from './inventory-ui.js';
 import { collectBattleLoot, collectContainerLoot } from './loot.js';
 import { EventType }         from './enums.js';
+import { Cinematic }         from './cinematic.js';
 
 const Game = {
 
@@ -19,7 +20,7 @@ const Game = {
   _defeatReturnTimer: null,
 
   // ── Boot ───────────────────────────────────────────────────────────────
-  init() {
+  async init() {
     UI.init();
     this.state = Save.load();
 
@@ -36,6 +37,12 @@ const Game = {
     });
 
     this._refreshStats();
+
+    if (!this.state.introPlayed) {
+      await Cinematic.play('game_intro');
+      this.state.introPlayed = true;
+      Save.write(this.state);
+    }
   },
 
   // ── Nav tabs ───────────────────────────────────────────────────────────
@@ -57,11 +64,12 @@ const Game = {
     document.getElementById('btn-next').addEventListener('click',       () => this._onNextEvent());
     document.getElementById('btn-wipe').addEventListener('click',       () => this._onWipe());
     document.getElementById('modal-overlay').addEventListener('click', e => {
-      if (e.target === document.getElementById('modal-overlay')) UI.closeModal();
+      if (e.target === document.getElementById('modal-overlay') && !Cinematic.isPlaying) UI.closeModal();
     });
 
     document.querySelectorAll('.speed-btn').forEach(btn => {
       btn.addEventListener('click', () => {
+        if (Cinematic.isPlaying) return;
         document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         this.speedMult = parseFloat(btn.dataset.speed);
@@ -201,7 +209,7 @@ const Game = {
   },
 
   // ── Loot container event ───────────────────────────────────────────────
-  _onLootEvent(ev) {
+  async _onLootEvent(ev) {
     const prog = this._getLocProgress();
     const { added, currencies, overflowed } = collectContainerLoot(
       ev, this.inventory, this.state, this.activeLocation.level
@@ -209,13 +217,14 @@ const Game = {
     prog.completedEvents.push(prog.currentEventIndex);
     Save.write(this.state);
     if (InventoryUI._isInventoryTabActive()) InventoryUI.render();
+    if (ev.cinematicId) await Cinematic.play(ev.cinematicId);
     UI.showLootModal(`Container — ${ev.label}`, added, currencies, overflowed, () => {
       this._onNextEvent();
     });
   },
 
   // ── Start battle ───────────────────────────────────────────────────────
-  _onStartBattle() {
+  async _onStartBattle() {
     const prog = this._getLocProgress();
     const idx  = prog.currentEventIndex;
     const ev   = this.activeLocation.events[idx];
@@ -248,6 +257,7 @@ const Game = {
     Save.write(this.state);
     this._refreshStats();
 
+    if (ev.cinematicId) await Cinematic.play(ev.cinematicId);
     this.engine.start();
   },
 
