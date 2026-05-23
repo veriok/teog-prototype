@@ -3,6 +3,7 @@
 import { DATA }                                              from './data/index.js';
 import { ItemType, ItemSubtype, Rarity, Currency, CURRENCY_CONFIG } from './enums.js';
 import { UI }                                                from './ui.js';
+import { getItemValue }                                      from './inventory.js';
 
 // ── Sort order constants ───────────────────────────────────────────────────
 
@@ -86,6 +87,7 @@ export const InventoryUI = {
     this._save      = save;
     this._bindKeyboard();
     this._bindDeleteButton();
+    this._bindSellButton();
   },
 
   // ── Full re-render ────────────────────────────────────────────────────────
@@ -245,9 +247,37 @@ export const InventoryUI = {
       if (fill) fill.style.width = '0';
       btn.classList.remove('holding');
     }
+
+    const sellBtn = document.getElementById('btn-sell-item');
+    if (sellBtn) {
+      const sellPrice = Math.floor(getItemValue(item) / 2);
+      sellBtn.textContent = `Sell (${sellPrice} 💀)`;
+      sellBtn.disabled    = false;
+    }
   },
 
-  // ── Hold-to-delete ────────────────────────────────────────────────────────
+  // ── Sell button ─────────────────────────────────────────────────────────────────
+
+  _bindSellButton() {
+    const btn = document.getElementById('btn-sell-item');
+    if (!btn) return;
+    btn.addEventListener('click', () => this._onSell());
+  },
+
+  _onSell() {
+    if (!this._selectedId) return;
+    const idx = this._inventory.slots.findIndex(i => i.instanceId === this._selectedId);
+    if (idx === -1) return;
+    const item      = this._inventory.slots[idx];
+    const sellPrice = Math.floor(getItemValue(item) / 2);
+    this._state.currencies.souls = (this._state.currencies.souls ?? 0) + sellPrice;
+    this._inventory.remove(idx);
+    this._selectedId = null;
+    this._save();
+    this.render();
+  },
+
+  // ── Hold-to-delete ─────────────────────────────────────────────────────
 
   _bindDeleteButton() {
     const btn = document.getElementById('btn-delete-item');

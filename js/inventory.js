@@ -1,6 +1,6 @@
 // js/inventory.js — Echoes of Germolles: Inventory & Item Runtime
 
-import { ItemType, ModifierType, Rarity, RARITY_SLOT_COUNT } from './enums.js';
+import { ItemType, ModifierType, Rarity, RARITY_SLOT_COUNT, RARITY_VALUE_MULTIPLIER } from './enums.js';
 import { DATA } from './data/index.js';
 
 // Auto-incrementing instance ID — reset on page load (not persisted).
@@ -30,12 +30,13 @@ export class Modifier {
 // Do not construct directly in gameplay code — use rollItemInstance().
 
 export class ItemInstance {
-  constructor({ definitionId, rarity, baseAttribute, slots }) {
+  constructor({ definitionId, rarity, baseAttribute, slots, isUnique = false }) {
     this.instanceId    = _nextInstanceId++;
     this.definitionId  = definitionId;
     this.rarity        = rarity;
     this.baseAttribute = baseAttribute; // Modifier — fixed at drop, not rolled
     this.slots         = slots;         // Modifier[] — rolled at drop
+    this.isUnique      = isUnique;      // true = only one obtainable per playthrough
     this.currentStack  = 1;             // Reserved for future stacking support
   }
 
@@ -198,4 +199,16 @@ export class EquippedItems extends EventTarget {
   getAll() {
     return { ...this._slots };
   }
+}
+
+// ── getItemValue ─────────────────────────────────────────────────────────────────────────────
+// Computes the gold value of an item instance.
+//   base value × rarity multiplier × (1 + 1% per mod level)
+// Used for sell pricing (typically half this is awarded).
+
+export function getItemValue(item) {
+  const def   = DATA.items[item.definitionId];
+  const rMult = RARITY_VALUE_MULTIPLIER[item.rarity] ?? 1;
+  const mMult = 1 + item.slots.reduce((acc, mod) => acc + mod.level * 0.01, 0);
+  return Math.round(def.value * rMult * mMult);
 }

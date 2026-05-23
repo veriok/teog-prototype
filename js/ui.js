@@ -1,6 +1,7 @@
 // js/ui.js — Echoes of Germolles: UI Rendering
 
-import { DATA } from './data/index.js';
+import { DATA }           from './data/index.js';
+import { CURRENCY_CONFIG } from './enums.js';
 
 export const UI = {
 
@@ -437,6 +438,42 @@ export const UI = {
   },
 
   // ── Modal ──────────────────────────────────────────────────────────────
+  // ── Loot modal ───────────────────────────────────────────────────────────
+  // Displays a standardised loot-results modal used after battles and
+  // container events. addedItems is an ItemInstance[]. currencies is a
+  // plain object { [CurrencyKey]: number }. overflowed is ItemInstance[].
+  // onNext is invoked after the modal is closed.
+  showLootModal(title, addedItems, currencies, overflowed, onNext) {
+    let body = '';
+
+    if (addedItems.length === 0 && Object.keys(currencies).length === 0) {
+      body = '<div class="loot-empty">Nothing of value was found.</div>';
+    } else {
+      if (addedItems.length > 0) {
+        body += '<div class="loot-item-list">';
+        addedItems.forEach(item => {
+          const def = DATA.items[item.definitionId];
+          body += `<div class="loot-item-row rarity-${item.rarity}">
+            <span class="loot-item-icon">❓</span>
+            <span class="loot-item-name">${def?.name ?? item.definitionId}</span>
+            <span class="loot-item-rarity">${item.rarity}</span>
+          </div>`;
+        });
+        body += '</div>';
+      }
+      for (const [key, amount] of Object.entries(currencies)) {
+        const cfg = CURRENCY_CONFIG[key];
+        if (cfg) body += `<div class="loot-currency-row">${cfg.icon} +${amount} ${cfg.label}</div>`;
+      }
+    }
+
+    if (overflowed.length > 0) {
+      body += `<div class="loot-overflow">${overflowed.length} item${overflowed.length > 1 ? 's' : ''} could not fit in your inventory.</div>`;
+    }
+
+    this.showModal(title, body, [{ label: 'Next', action: onNext }]);
+  },
+
   showModal(title, body, buttons) {
     document.getElementById('modal-title').textContent = title;
     document.getElementById('modal-body').innerHTML    = body;
@@ -622,7 +659,7 @@ export const UI = {
     }
 
     if (battleBtn) {
-      battleBtn.disabled = prog.zoneConquered || !!loc.stub;
+      battleBtn.disabled = !!loc.stub;
     }
   },
 

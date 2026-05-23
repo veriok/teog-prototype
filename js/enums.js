@@ -74,3 +74,20 @@ export const Currency = Object.freeze({
 export const CURRENCY_CONFIG = Object.freeze({
   [Currency.SOULS]: { label: 'Souls', icon: '💀' },
 });
+
+// ── Event types ─────────────────────────────────────────────────────────
+export const EventType = Object.freeze({
+  FIGHT: 'fight',
+  ELITE: 'elite',
+  BOSS:  'boss',
+  LOOT:  'loot',
+});
+
+// ── Item sell-value multipliers by rarity ───────────────────────────────────
+export const RARITY_VALUE_MULTIPLIER = Object.freeze({
+  [Rarity.JUNK]:      0.5,
+  [Rarity.COMMON]:    1.0,
+  [Rarity.UNCOMMON]:  2.0,
+  [Rarity.RARE]:      3.0,
+  [Rarity.LEGENDARY]: 5.0,
+});

@@ -1575,3 +1575,26 @@ body {
   margin: 4px 0;
 }
 
+/* ── Sell button ─────────────────────────────────────────────────────────────────── */
+.btn-sell {
+  border-color: #5a9e3a;
+  color: #7ec45c;
+}
+.btn-sell:hover {
+  background: rgba(60,100,30,0.3);
+  box-shadow: 0 0 10px rgba(94,180,62,0.4);
+}
+
+/* ── Loot Modal ─────────────────────────────────────────────────────────────────── */
+.loot-item-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.loot-item-row  { display: flex; align-items: center; gap: 10px; font-family: var(--font-heading); font-size: 0.8rem; padding: 4px 0; }
+.loot-item-icon { font-size: 1.1rem; }
+.loot-item-name { flex: 1; color: var(--text-parchment); }
+.loot-item-rarity { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
+.rarity-uncommon  .loot-item-rarity { color: #4a9e5a; }
+.rarity-rare      .loot-item-rarity { color: var(--text-blue); }
+.rarity-legendary .loot-item-rarity { color: var(--text-gold); }
+.loot-currency-row { display: flex; align-items: center; gap: 8px; font-family: var(--font-heading); font-size: 0.82rem; color: var(--text-gold); padding: 4px 0; }
+.loot-empty   { color: var(--text-dim); font-style: italic; font-size: 0.85rem; padding: 6px 0; }
+.loot-overflow { color: var(--text-red); font-style: italic; font-size: 0.78rem; margin-top: 8px; border-top: 1px solid var(--border-dim); padding-top: 8px; }
+

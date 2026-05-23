@@ -1,7 +1,9 @@
 // js/battle.js — Echoes of Germolles: Battle Engine
 
-import { DATA } from './data/index.js';
-import { UI }   from './ui.js';
+import { DATA }           from './data/index.js';
+import { UI }             from './ui.js';
+import { EquippedItems }  from './inventory.js';
+import { equipActorItems } from './loot.js';
 
 const TICK = 0.5; // seconds per tick
 
@@ -65,6 +67,9 @@ export class ActorRuntime {
     this.specialAttack     = def.specialAttack || null;
     this.phase2SpecialAttack = def.phase2SpecialAttack || null;
     this.phase2Abilities   = def.phase2Abilities || null;
+
+    // Equipped items — loot bookkeeping; does not affect combat stats
+    this.equippedItems = new EquippedItems();
 
     // Combat refresh cooldown
     this.combatRefreshCD = 0;
@@ -153,14 +158,20 @@ export class BattleEngine {
 
   // ── Build actors ───────────────────────────────────────────────────────
   init(paragonIds, eventDef) {
-    this.paragons = paragonIds.map(id => new ActorRuntime(DATA.actors[id]));
+    this.paragons = paragonIds.map(id => {
+      const actor = new ActorRuntime(DATA.actors[id]);
+      equipActorItems(DATA.actors[id], actor);
+      return actor;
+    });
     this.enemies  = [];
 
     const rows = eventDef.enemyRows;
     Object.entries(rows).forEach(([row, ids]) => {
       ids.forEach(id => {
         const def = { ...DATA.actors[id], row };
-        this.enemies.push(new ActorRuntime(def));
+        const actor = new ActorRuntime(def);
+        equipActorItems(DATA.actors[id], actor);
+        this.enemies.push(actor);
       });
     });
 

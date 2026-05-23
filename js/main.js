@@ -1,11 +1,13 @@
 // js/main.js — Echoes of Germolles: Entry Point & Game State
 
-import { DATA }         from './data/index.js';
-import { Save }         from './save.js';
-import { UI }           from './ui.js';
-import { BattleEngine } from './battle.js';
-import { Inventory }    from './inventory.js';
-import { InventoryUI }  from './inventory-ui.js';
+import { DATA }              from './data/index.js';
+import { Save }              from './save.js';
+import { UI }                from './ui.js';
+import { BattleEngine }      from './battle.js';
+import { Inventory }         from './inventory.js';
+import { InventoryUI }       from './inventory-ui.js';
+import { collectBattleLoot, collectContainerLoot } from './loot.js';
+import { EventType }         from './enums.js';
 
 const Game = {
 
@@ -157,11 +159,18 @@ const Game = {
     nextBtn.disabled    = true;
     restartBtn.disabled = (idx === 0);
 
-    if (ev.type === 'loot') {
+    if (ev.type === EventType.LOOT) {
       startBtn.disabled = true;
-      nextBtn.disabled  = false;
-      UI.setStatus(`Loot Event — ${ev.label}`, 'active');
-      this._showLootEvent(ev);
+      nextBtn.disabled  = true;
+      UI.setStatus(`Container — ${ev.label}`, '');
+      this._clearBattleArea();
+      // If already looted (e.g. page reload mid-zone) just re-enable Next.
+      if (prog.completedEvents.includes(idx)) {
+        nextBtn.disabled = false;
+        UI.setStatus(`Container — ${ev.label} (already looted)`, '');
+      } else {
+        this._onLootEvent(ev);
+      }
     } else {
       startBtn.disabled = false;
       UI.setStatus(`${ev.type.toUpperCase()} — ${ev.label}. Deploy and engage.`, '');
@@ -191,12 +200,26 @@ const Game = {
     if (lootArea) lootArea.innerHTML = '';
   },
 
+  // ── Loot container event ───────────────────────────────────────────────
+  _onLootEvent(ev) {
+    const prog = this._getLocProgress();
+    const { added, currencies, overflowed } = collectContainerLoot(
+      ev, this.inventory, this.state, this.activeLocation.level
+    );
+    prog.completedEvents.push(prog.currentEventIndex);
+    Save.write(this.state);
+    if (InventoryUI._isInventoryTabActive()) InventoryUI.render();
+    UI.showLootModal(`Container — ${ev.label}`, added, currencies, overflowed, () => {
+      this._onNextEvent();
+    });
+  },
+
   // ── Start battle ───────────────────────────────────────────────────────
   _onStartBattle() {
     const prog = this._getLocProgress();
     const idx  = prog.currentEventIndex;
     const ev   = this.activeLocation.events[idx];
-    if (!ev || ev.type === 'loot') return;
+    if (!ev || ev.type === EventType.LOOT) return;
 
     if (this.engine) { this.engine.stop(); this.engine = null; }
 
@@ -236,47 +259,63 @@ const Game = {
 
   // ── Battle end callback ────────────────────────────────────────────────
   _onBattleEnd(result) {
-    UI.showResult(result);
     const prog = this._getLocProgress();
 
     if (result === 'victory') {
-      UI.setStatus('Victory! The path ahead clears.', 'victory');
       this.state.victories++;
-      document.getElementById('btn-next').disabled = false;
       prog.completedEvents.push(prog.currentEventIndex);
 
-      if (prog.currentEventIndex >= this.activeLocation.events.length - 1) {
+      const defeatedEnemies = this.engine.enemies;
+      const { added, overflowed } = collectBattleLoot(
+        defeatedEnemies, this.inventory, this.state
+      );
+      Save.write(this.state);
+
+      const isLastEvent = prog.currentEventIndex >= this.activeLocation.events.length - 1;
+      if (isLastEvent) {
         prog.zoneConquered = true;
         UI.setStatus(`${this.activeLocation.name} — conquered.`, 'victory');
         UI.log(`${this.activeLocation.name} has fallen. The paragons hold.`, 'system');
+      } else {
+        UI.setStatus('Victory! The path ahead clears.', 'victory');
       }
+
+      const title = isLastEvent ? `${this.activeLocation.name} — Conquered!` : 'Victory';
+      UI.showLootModal(title, added, {}, overflowed, () => { this._onNextEvent(); });
 
     } else {
       UI.setStatus('Defeat. Your forces are routed.', 'defeat');
       this.state.defeats++;
-      // Reset location progress on defeat
       prog.currentEventIndex = 0;
       prog.completedEvents   = [];
       UI.log('Defeat. The survivors retreat to the castle.', 'system');
-
-      // Return to map after the banner clears
-      this._defeatReturnTimer = setTimeout(() => {
-        this._defeatReturnTimer = null;
-        if (this.engine) { this.engine.stop(); this.engine = null; }
-        this.activeLocation = null;
-        this.state.selectedLocationId = null;
-        Save.write(this.state);
-        UI.clearLog();
-        UI.showLocationSelect();
-        UI.renderLocationSelect(DATA.locations, this.state.locationProgress, locId => {
-          this.state.selectedLocationId = locId;
-        });
-        UI.resetLocationSidebar();
-      }, 3600);
+      Save.write(this.state);
+      this._refreshStats();
+      UI.showModal(
+        'Defeat',
+        '<p style="font-family:var(--font-body);color:var(--text-parchment)">Your forces are routed. The paragons retreat to safety.</p>',
+        [{ label: 'Exit to Map', action: () => this._returnToMap() }]
+      );
+      return;
     }
 
     Save.write(this.state);
     this._refreshStats();
+  },
+
+  // ── Return to location map (shared by defeat + back-to-map) ───────────
+  _returnToMap() {
+    if (this._defeatReturnTimer) { clearTimeout(this._defeatReturnTimer); this._defeatReturnTimer = null; }
+    if (this.engine) { this.engine.stop(); this.engine = null; }
+    this.activeLocation = null;
+    this.state.selectedLocationId = null;
+    Save.write(this.state);
+    UI.clearLog();
+    UI.showLocationSelect();
+    UI.renderLocationSelect(DATA.locations, this.state.locationProgress, locId => {
+      this.state.selectedLocationId = locId;
+    });
+    UI.resetLocationSidebar();
   },
 
   // ── Next event ─────────────────────────────────────────────────────────
