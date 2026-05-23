@@ -195,9 +195,8 @@ const Game = {
     const lootArea = document.getElementById('loot-display');
     if (lootArea) {
       lootArea.innerHTML = ev.loot
-        ? `<div style="padding:20px 28px;font-family:var(--font-heading);color:var(--text-gold);font-size:0.8rem;letter-spacing:0.08em;">
-            📦 Supply Cache Contents:<br><br>
-            ${ev.loot.map(l => `<div style="color:var(--text-parchment);margin:4px 0">• ${l}</div>`).join('')}
+        ? `<div style="padding:20px 28px;font-family:var(--font-heading);font-size:0.8rem;letter-spacing:0.08em;">
+            ${ev.loot.map(l => `<div style="color:var(--text-parchment);margin:4px 0">${l}</div>`).join('')}
           </div>`
         : '';
     }
@@ -243,7 +242,7 @@ const Game = {
       (actor)     => UI.actorDied(actor)
     );
 
-    this.engine.init(['aldric', 'ysolde'], ev);
+    this.engine.init(['aldric', 'ysolde'], ev, this.activeLocation.combatMods ?? []);
     this.engine.setSpeed(this.speedMult);
 
     UI.buildBattleCards(this.engine);

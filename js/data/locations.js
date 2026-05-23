@@ -10,6 +10,7 @@ export const locations = [
     icon: 'assets/locations/unknown.png',
     level: 1,
     mapX: 50, mapY: 51,
+    combatMods: [],
     events: [
       {
         index: 0, type: EventType.FIGHT, label: 'Patrol',
@@ -50,6 +51,7 @@ export const locations = [
     level: 1,
     mapX: 50, mapY: 92,
     stub: true,
+    combatMods: [],
     events: []
   },
   {
@@ -60,6 +62,7 @@ export const locations = [
     level: 1,
     mapX: 76, mapY: 29,
     stub: true,
+    combatMods: [],
     events: []
   },
 ];

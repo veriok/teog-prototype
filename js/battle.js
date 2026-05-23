@@ -4,6 +4,7 @@ import { DATA }           from './data/index.js';
 import { UI }             from './ui.js';
 import { EquippedItems }  from './inventory.js';
 import { equipActorItems } from './loot.js';
+import { computeActorStats } from './stats.js';
 
 const TICK = 0.5; // seconds per tick
 
@@ -19,6 +20,7 @@ export class ActorRuntime {
     this.subclass    = def.subclass || null; // 'elite' | 'boss' | null
     this.row         = def.row;       // 'front' | 'back'
     this.level       = def.level || 1;
+    this.tags        = def.tags  ?? [];
 
     this.maxHP       = def.baseHP;
     this.currentHP   = def.baseHP;
@@ -70,6 +72,10 @@ export class ActorRuntime {
 
     // Equipped items — loot bookkeeping; does not affect combat stats
     this.equippedItems = new EquippedItems();
+
+    // Combat stats — populated by computeActorStats() in BattleEngine.init()
+    this.passives = [];
+    this.stats    = {};
 
     // Combat refresh cooldown
     this.combatRefreshCD = 0;
@@ -157,10 +163,12 @@ export class BattleEngine {
   }
 
   // ── Build actors ───────────────────────────────────────────────────────
-  init(paragonIds, eventDef) {
+  init(paragonIds, eventDef, locationMods = []) {
+    this.locationMods = locationMods;
     this.paragons = paragonIds.map(id => {
       const actor = new ActorRuntime(DATA.actors[id]);
       equipActorItems(DATA.actors[id], actor);
+      computeActorStats(actor);
       return actor;
     });
     this.enemies  = [];
@@ -171,6 +179,7 @@ export class BattleEngine {
         const def = { ...DATA.actors[id], row };
         const actor = new ActorRuntime(def);
         equipActorItems(DATA.actors[id], actor);
+        computeActorStats(actor);
         this.enemies.push(actor);
       });
     });

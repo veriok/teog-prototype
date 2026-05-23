@@ -14,12 +14,13 @@ let _nextInstanceId = 1;
 // effectValue = template.baseValue + template.valuePerLevel * level
 
 export class Modifier {
-  constructor({ id, name, level, modifierType, effectValue }) {
+  constructor({ id, name, level, modifierType, effectValue, triggerValue = null }) {
     this.id           = id;
     this.name         = name;
     this.level        = level;
     this.modifierType = modifierType;
     this.effectValue  = effectValue;
+    this.triggerValue = triggerValue;
   }
 }
 
@@ -76,15 +77,22 @@ export function rollItemInstance(definitionId, rarity, level) {
   let   genericUsed     = 0;
   const nonGenericTypes = new Set();
 
-  // Pre-filter to rollable templates only. ATTRIBUTE type is reserved for
-  // base attributes and must never appear as a rolled slot.
-  const rollable = Object.values(DATA.modifiers).filter(
-    m => m.isRollable && m.modifierType !== ModifierType.ATTRIBUTE
+  // Pre-filter to rollable templates that are valid for this item type.
+  // ATTRIBUTE type is reserved for base attributes and must never roll.
+  // allowedItemTypes: null means the mod is available on every item type.
+  const itemType = definition.type;
+  const rollable  = Object.values(DATA.modifiers).filter(
+    m => m.isRollable
+      && m.modifierType !== ModifierType.ATTRIBUTE
+      && (!m.allowedItemTypes || m.allowedItemTypes.includes(itemType))
   );
 
+  const rolledIds = new Set(); // prevents the same mod appearing twice
+
   for (let i = 0; i < slotCount; i++) {
-    // Narrow candidates to those that still fit within the type budget.
+    // Narrow candidates: no duplicates, and within the type budget.
     const candidates = rollable.filter(m => {
+      if (rolledIds.has(m.id)) return false;
       if (m.modifierType === ModifierType.GENERIC) return genericUsed < 1;
       return nonGenericTypes.size < 2 || nonGenericTypes.has(m.modifierType);
     });
@@ -92,6 +100,7 @@ export function rollItemInstance(definitionId, rarity, level) {
     if (candidates.length === 0) break;
 
     const tpl = candidates[Math.floor(Math.random() * candidates.length)];
+    rolledIds.add(tpl.id);
 
     if (tpl.modifierType === ModifierType.GENERIC) {
       genericUsed++;
@@ -112,6 +121,9 @@ function _resolveModifier(template, level) {
     level,
     modifierType: template.modifierType,
     effectValue:  template.baseValue + template.valuePerLevel * level,
+    triggerValue: template.triggerBaseValue != null
+      ? template.triggerBaseValue + template.triggerValuePerLevel * level
+      : null,
   });
 }
 

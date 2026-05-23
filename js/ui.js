@@ -70,6 +70,11 @@ export const UI = {
     if (actor.subclass === 'elite') card.classList.add('elite');
     if (actor.subclass === 'boss')  card.classList.add('boss');
 
+    // Tag pills
+    const tagLine = (actor.tags ?? []).length > 0
+      ? actor.tags.map(t => `<span class="tag-pill">${t[0].toUpperCase() + t.slice(1)}</span>`).join('')
+      : `<span class="tag-pill">${actor.role}</span>`;
+
     // Portrait: img if path defined, emoji fallback on error or if missing
     const portraitHTML = actor.portrait
       ? `<div class="card-portrait">
@@ -84,7 +89,7 @@ export const UI = {
         ${portraitHTML}
         <div class="card-info">
           <div class="card-name">${actor.name}</div>
-          <div class="card-role">${actor.role}</div>
+          <div class="card-role">${tagLine}</div>
           <div class="card-level">${actor.subtype === 'paragon' ? 'Paragon' : (actor.subclass === 'boss' ? '☠ BOSS' : actor.subclass === 'elite' ? '★ ELITE' : `Lv.${actor.level}`)}</div>
         </div>
       </div>

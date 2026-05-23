@@ -8,7 +8,7 @@
 //                        (referenced by baseAttributeId in item definitions)
 // isRollable: true   →  eligible for random slot rolling on dropped items
 
-import { ModifierType } from '../enums.js';
+import { ModifierType, ItemType } from '../enums.js';
 
 export const modifiers = {
 
@@ -17,6 +17,7 @@ export const modifiers = {
   base_slashing_dmg: {
     id: 'base_slashing_dmg', name: 'Slashing Damage',
     modifierType: ModifierType.ATTRIBUTE,
+    modClass: 'stat', effectTarget: 'slashingDmg',
     isRollable: false,
     baseValue: 2, valuePerLevel: 0.8,
   },
@@ -24,6 +25,7 @@ export const modifiers = {
   base_armor_value: {
     id: 'base_armor_value', name: 'Armor',
     modifierType: ModifierType.ATTRIBUTE,
+    modClass: 'stat', effectTarget: 'armor',
     isRollable: false,
     baseValue: 5, valuePerLevel: 1.5,
   },
@@ -31,6 +33,7 @@ export const modifiers = {
   base_flat_dmg: {
     id: 'base_flat_dmg', name: 'Flat Damage',
     modifierType: ModifierType.ATTRIBUTE,
+    modClass: 'stat', effectTarget: 'flatDmg',
     isRollable: false,
     baseValue: 2, valuePerLevel: 0.6,
   },
@@ -38,6 +41,7 @@ export const modifiers = {
   base_hp_bonus: {
     id: 'base_hp_bonus', name: 'HP Bonus',
     modifierType: ModifierType.ATTRIBUTE,
+    modClass: 'stat', effectTarget: 'hp',
     isRollable: false,
     baseValue: 10, valuePerLevel: 2,
   },
@@ -47,14 +51,18 @@ export const modifiers = {
   sword_slashing_bonus: {
     id: 'sword_slashing_bonus', name: 'Slashing Bonus',
     modifierType: ModifierType.SWORD,
+    modClass: 'stat', effectTarget: 'slashingDmg',
     isRollable: true,
+    allowedItemTypes: [ItemType.MAIN_HAND],
     baseValue: 1, valuePerLevel: 0.4,
   },
 
   sword_crit_chance: {
     id: 'sword_crit_chance', name: 'Critical Strike Chance',
     modifierType: ModifierType.SWORD,
+    modClass: 'stat', effectTarget: 'critChance',
     isRollable: true,
+    allowedItemTypes: [ItemType.MAIN_HAND],
     baseValue: 0.5, valuePerLevel: 0.15,
   },
 
@@ -63,14 +71,18 @@ export const modifiers = {
   shield_block_bonus: {
     id: 'shield_block_bonus', name: 'Block Bonus',
     modifierType: ModifierType.SHIELD,
+    modClass: 'stat', effectTarget: 'blockBonus',
     isRollable: true,
+    allowedItemTypes: [ItemType.OFFHAND],
     baseValue: 2, valuePerLevel: 0.5,
   },
 
   shield_armor_regen: {
     id: 'shield_armor_regen', name: 'Armor Regen',
     modifierType: ModifierType.SHIELD,
+    modClass: 'stat', effectTarget: 'armorRegen',
     isRollable: true,
+    allowedItemTypes: [ItemType.OFFHAND],
     baseValue: 1, valuePerLevel: 0.3,
   },
 
@@ -79,14 +91,18 @@ export const modifiers = {
   tactics_speed_bonus: {
     id: 'tactics_speed_bonus', name: 'Speed Bonus',
     modifierType: ModifierType.TACTICS,
+    modClass: 'stat', effectTarget: 'speed',
     isRollable: true,
+    allowedItemTypes: null, // all item types
     baseValue: 0.02, valuePerLevel: 0.005,
   },
 
   tactics_cooldown_reduction: {
     id: 'tactics_cooldown_reduction', name: 'Cooldown Reduction',
     modifierType: ModifierType.TACTICS,
+    modClass: 'stat', effectTarget: 'cooldownReduct',
     isRollable: true,
+    allowedItemTypes: null, // all item types
     baseValue: 0.5, valuePerLevel: 0.1,
   },
 
@@ -95,14 +111,18 @@ export const modifiers = {
   fire_dmg_bonus: {
     id: 'fire_dmg_bonus', name: 'Fire Damage Bonus',
     modifierType: ModifierType.FIRE,
+    modClass: 'stat', effectTarget: 'fireDmgBonus',
     isRollable: true,
+    allowedItemTypes: [ItemType.MAIN_HAND],
     baseValue: 1, valuePerLevel: 0.5,
   },
 
   fire_burn_duration: {
     id: 'fire_burn_duration', name: 'Burn Duration',
     modifierType: ModifierType.FIRE,
+    modClass: 'stat', effectTarget: 'burnDuration',
     isRollable: true,
+    allowedItemTypes: [ItemType.MAIN_HAND],
     baseValue: 0.5, valuePerLevel: 0.1,
   },
 
@@ -111,14 +131,18 @@ export const modifiers = {
   void_dmg_bonus: {
     id: 'void_dmg_bonus', name: 'Void Damage Bonus',
     modifierType: ModifierType.VOID,
+    modClass: 'stat', effectTarget: 'voidDmgBonus',
     isRollable: true,
+    allowedItemTypes: [ItemType.MAIN_HAND],
     baseValue: 1, valuePerLevel: 0.5,
   },
 
   void_entropy_stacks: {
     id: 'void_entropy_stacks', name: 'Entropy Stack Bonus',
     modifierType: ModifierType.VOID,
+    modClass: 'stat', effectTarget: 'entropyBonus',
     isRollable: true,
+    allowedItemTypes: [ItemType.MAIN_HAND],
     baseValue: 1, valuePerLevel: 0.1,
   },
 
@@ -127,14 +151,18 @@ export const modifiers = {
   generic_max_hp: {
     id: 'generic_max_hp', name: 'Max HP',
     modifierType: ModifierType.GENERIC,
+    modClass: 'stat', effectTarget: 'hp',
     isRollable: true,
+    allowedItemTypes: null, // all item types
     baseValue: 5, valuePerLevel: 1.5,
   },
 
   generic_flat_dmg: {
     id: 'generic_flat_dmg', name: 'Flat Damage',
     modifierType: ModifierType.GENERIC,
+    modClass: 'stat', effectTarget: 'flatDmg',
     isRollable: true,
+    allowedItemTypes: null, // all item types
     baseValue: 1, valuePerLevel: 0.5,
   },
 
