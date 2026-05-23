@@ -1375,3 +1375,203 @@ body {
 #loc-status.conquered   { color: var(--text-green); }
 #loc-status.in-progress { color: var(--text-gold); }
 
+/* ── Inventory Tab ─────────────────────────────────────────────────────── */
+
+/* Topbar: currencies left, status strip right */
+#inv-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border-dim);
+  flex-shrink: 0;
+}
+
+#inv-currencies {
+  display: flex;
+  gap: 20px;
+}
+
+.currency-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+}
+
+.currency-icon  { font-size: 1rem; }
+.currency-value { color: var(--text-gold); font-weight: 600; }
+.currency-label { color: var(--text-dim); }
+
+#inv-status-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+/* Scrollable item grid */
+#inv-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 18px;
+  overflow-y: auto;
+  flex: 1;
+  align-content: flex-start;
+}
+
+/* Item slot base */
+.inv-slot {
+  width: 80px;
+  height: 100px;
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  user-select: none;
+}
+
+.inv-slot.empty  { opacity: 0.28; cursor: default; }
+.inv-slot.filled { cursor: pointer; transition: background 0.12s; }
+.inv-slot.filled:hover  { background: var(--bg-card-hover); }
+.inv-slot.selected { outline: 2px solid var(--text-green); outline-offset: 2px; }
+
+/* Rarity-tinted borders */
+.inv-slot.rarity-junk      { border-color: var(--border-dim); }
+.inv-slot.rarity-common    { border-color: var(--text-parchment); }
+.inv-slot.rarity-uncommon  { border-color: #4a9e5a; }
+.inv-slot.rarity-rare      { border-color: var(--text-blue); }
+.inv-slot.rarity-legendary { border-color: var(--text-gold); box-shadow: 0 0 7px rgba(212,168,67,0.3); }
+
+/* Slot number (top-left corner) */
+.inv-slot-num {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 0.58rem;
+  color: var(--text-dim);
+  font-family: var(--font-heading);
+  line-height: 1;
+}
+
+/* Icon container with rarity-tinted border */
+.inv-slot-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-dim);
+  border-radius: 3px;
+  margin-bottom: 4px;
+  overflow: hidden;
+}
+
+.rarity-junk      .inv-slot-icon { border-color: var(--border-dim); }
+.rarity-common    .inv-slot-icon { border-color: var(--text-parchment); }
+.rarity-uncommon  .inv-slot-icon { border-color: #4a9e5a; }
+.rarity-rare      .inv-slot-icon { border-color: var(--text-blue); }
+.rarity-legendary .inv-slot-icon { border-color: var(--text-gold); }
+
+.inv-icon-img   { width: 32px; height: 32px; object-fit: contain; }
+.inv-icon-emoji { font-size: 1.4rem; line-height: 1; }
+
+/* Item name (2-line clamp) */
+.inv-slot-name {
+  font-size: 0.54rem;
+  text-align: center;
+  color: var(--text-parchment);
+  font-family: var(--font-heading);
+  line-height: 1.25;
+  padding: 0 4px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Rarity badge at the bottom of the slot */
+.inv-slot-rarity {
+  font-size: 0.48rem;
+  color: var(--text-dim);
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+/* Per-rarity colour for rarity badge text */
+.rarity-uncommon  .inv-slot-rarity { color: #4a9e5a; }
+.rarity-rare      .inv-slot-rarity { color: var(--text-blue); }
+.rarity-legendary .inv-slot-rarity { color: var(--text-gold); }
+
+/* Detail / action bar at the bottom */
+#inv-detail-bar {
+  border-top: 1px solid var(--border-dim);
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;
+  flex-shrink: 0;
+}
+
+#inv-detail-hint {
+  color: var(--text-dim);
+  font-style: italic;
+  font-size: 0.82rem;
+}
+
+#inv-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+#inv-detail-name {
+  flex: 1;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  color: var(--text-parchment);
+}
+
+/* Destroy button with hold-progress fill */
+#btn-delete-item {
+  position: relative;
+  overflow: hidden;
+  min-width: 96px;
+}
+
+.delete-fill {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 0;
+  background: var(--text-red);
+  pointer-events: none;
+  transition: none;
+}
+
+/* Tooltip rarity colours (used inside tooltip HTML) */
+.tt-rarity-uncommon  { color: #4a9e5a; }
+.tt-rarity-rare      { color: var(--text-blue); }
+.tt-rarity-legendary { color: var(--text-gold); }
+.tt-rarity-common    { color: var(--text-parchment); }
+.tt-rarity-junk      { color: var(--text-dim); }
+
+.tt-divider {
+  border: none;
+  border-top: 1px solid var(--border-dim);
+  margin: 4px 0;
+}
+

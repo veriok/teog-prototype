@@ -49,7 +49,11 @@ export const actors = {
         const t = targets[Math.floor(Math.random() * targets.length)];
         return [{ type: 'damage', target: t, amount: 35, damageType: 'physical', ignoresGuard: true, source: 'Desperate Flail' }];
       }
-    }
+    },
+    dropTable: [
+      { definitionId: 'drowned_sword',  chance: 0.50, unique: false },
+      { definitionId: 'drowned_shield', chance: 0.30, unique: false },
+    ],
   },
 
   drowned_soldier_2: {
@@ -69,7 +73,11 @@ export const actors = {
         const t = targets[Math.floor(Math.random() * targets.length)];
         return [{ type: 'damage', target: t, amount: 35, damageType: 'physical', ignoresGuard: true, source: 'Desperate Flail' }];
       }
-    }
+    },
+    dropTable: [
+      { definitionId: 'drowned_sword',  chance: 0.50, unique: false },
+      { definitionId: 'drowned_shield', chance: 0.30, unique: false },
+    ],
   },
 
   siege_crossbowman: {
@@ -91,7 +99,10 @@ export const actors = {
         if (Math.random() < 0.5) effects.push({ type: 'apply_status', target: t, statusId: 'stun', stacks: 1, duration: 1.0 });
         return effects;
       }
-    }
+    },
+    dropTable: [
+      { definitionId: 'drowned_sword', chance: 0.25, unique: false },
+    ],
   },
 
   siege_warden: {
@@ -115,7 +126,10 @@ export const actors = {
           ...targets.map(t => ({ type: 'apply_status', target: t, statusId: 'slow', stacks: 2, duration: 4 }))
         ];
       }
-    }
+    },
+    dropTable: [
+      { definitionId: 'warden_helm', chance: 0.40, unique: false },
+    ],
   },
 
   drowned_sergeant: {
@@ -145,6 +159,10 @@ export const actors = {
         return effects;
       }
     },
+    dropTable: [
+      { definitionId: 'sergeant_medallion', chance: 1.00, unique: true },
+      { definitionId: 'drowned_sword',      chance: 0.80, unique: false },
+    ],
     phase2SpecialAttack: {
       name: 'The Deep Takes All', icon: '🌑',
       execute(caster, targets) {

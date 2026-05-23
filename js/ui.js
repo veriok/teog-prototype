@@ -633,5 +633,16 @@ export const UI = {
     const panel = document.getElementById('loc-detail-panel');
     if (panel) panel.style.display = 'none';
   },
+
+  // ── Public tooltip helpers (used by InventoryUI and others) ────────────
+  showRawTooltip(html, e) {
+    this._tooltip.innerHTML = html;
+    this._tooltip.style.display = 'block';
+    this._moveTooltip(e);
+  },
+
+  hideTooltip() {
+    this._hideTooltip();
+  },
 };
 

@@ -4,10 +4,13 @@ import { DATA }         from './data/index.js';
 import { Save }         from './save.js';
 import { UI }           from './ui.js';
 import { BattleEngine } from './battle.js';
+import { Inventory }    from './inventory.js';
+import { InventoryUI }  from './inventory-ui.js';
 
 const Game = {
 
   state:          null,   // persisted save state
+  inventory:      null,   // Inventory instance
   engine:         null,   // active BattleEngine
   activeLocation: null,   // current DATA.locations entry (when in battle view)
   speedMult:      1,
@@ -17,6 +20,9 @@ const Game = {
   init() {
     UI.init();
     this.state = Save.load();
+
+    this.inventory = new Inventory(this.state.inventoryCapacity ?? 20);
+    InventoryUI.init(this.inventory, this.state, () => Save.write(this.state));
 
     this._initNavTabs();
     this._initBattleControls();
@@ -33,7 +39,10 @@ const Game = {
   // ── Nav tabs ───────────────────────────────────────────────────────────
   _initNavTabs() {
     document.querySelectorAll('.nav-tab').forEach(btn => {
-      btn.addEventListener('click', () => UI.switchTab(btn.dataset.tab));
+      btn.addEventListener('click', () => {
+        UI.switchTab(btn.dataset.tab);
+        if (btn.dataset.tab === 'inventory') InventoryUI.render();
+      });
     });
   },
 

@@ -9,7 +9,7 @@ export const Save = {
   // ── Default state ──────────────────────────────────────────────────────
   _default() {
     return {
-      version: 2,
+      version: 3,
       selectedLocationId: null,
       locationProgress: {
         flooded_cellars: { currentEventIndex: 0, completedEvents: [], zoneConquered: false }
@@ -17,6 +17,9 @@ export const Save = {
       runCount: 0,
       victories: 0,
       defeats: 0,
+      uniqueDroppedItems: [],
+      currencies: { souls: 0 },
+      inventoryCapacity: 20,
       savedAt: null,
     };
   },
@@ -40,6 +43,11 @@ export const Save = {
           zoneConquered:     parsed.zoneConquered     || false,
         };
         return migrated;
+      }
+      // Migrate v2 → v3 (add uniqueDroppedItems)
+      if (parsed.version < 3) {
+        parsed.uniqueDroppedItems = [];
+        parsed.version = 3;
       }
       return Object.assign(this._default(), parsed);
     } catch (e) {
