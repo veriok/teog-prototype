@@ -34,7 +34,6 @@ const STAT_LABELS = {
   flatDmg:       'Flat Dmg',
   critChance:    'Crit Chance',
   speed:         'Speed',
-  cooldownReduct:'Cooldown Reduct.',
   blockBonus:    'Block Bonus',
   armorRegen:    'Armor Regen',
   fireDmgBonus:  'Fire Dmg Bonus',
@@ -281,23 +280,20 @@ export const ParagonUI = {
       const slotType = el.dataset.slot;
       const item     = equipped.get(slotType);
       const wrapper  = el.closest('.equip-slot-wrapper');
-      el.classList.remove('selected', 'filled', 'empty');
+      el.classList.remove('selected', 'filled', 'empty',
+        'rarity-common', 'rarity-uncommon', 'rarity-rare', 'rarity-legendary', 'rarity-junk');
       if (wrapper) wrapper.classList.toggle('filled', !!item);
       el.textContent = '';
 
       if (slotType === _selectedEquipSlot) el.classList.add('selected');
 
       if (item) {
-        el.classList.add('filled');
         const def  = DATA.items[item.definitionId];
+        el.classList.add('filled', `rarity-${item.rarity ?? 'common'}`);
         const icon = document.createElement('span');
         icon.className   = 'equip-icon';
         icon.textContent = def?.icon ?? '?';
-        const name = document.createElement('span');
-        name.className   = 'equip-label';
-        name.textContent = def?.name ?? item.definitionId;
         el.appendChild(icon);
-        el.appendChild(name);
       } else {
         el.classList.add('empty');
         const label = document.createElement('span');
@@ -366,8 +362,13 @@ export const ParagonUI = {
           const name = document.createElement('span');
           name.className   = 'abil-slot-name';
           name.textContent = ab.name;
+          const pAbility = def?.abilities?.find(a => a.abilityId === abilityId);
+          const rankEl   = document.createElement('span');
+          rankEl.className   = 'abil-slot-rank';
+          rankEl.textContent = `R${pAbility?.rank ?? 1}`;
           slotEl.appendChild(icon);
           slotEl.appendChild(name);
+          slotEl.appendChild(rankEl);
         } else {
           slotEl.classList.add('empty');
           const label = document.createElement('span');
@@ -426,14 +427,10 @@ export const ParagonUI = {
           icon.className   = 'item-icon';
           icon.textContent = def?.icon ?? '?';
           const name = document.createElement('span');
-          name.className   = 'item-name';
+          name.className   = `item-name rarity-text-${item.rarity ?? 'common'}`;
           name.textContent = def?.name ?? item.definitionId;
-          const rarity = document.createElement('span');
-          rarity.className   = 'item-rarity';
-          rarity.textContent = item.rarity ?? '';
           row.appendChild(icon);
           row.appendChild(name);
-          row.appendChild(rarity);
           list.appendChild(row);
         }
       }
@@ -486,8 +483,6 @@ export const ParagonUI = {
         list.appendChild(row);
       }
 
-      const assignBtn = document.getElementById('btn-assign-ability');
-      if (assignBtn) assignBtn.disabled = unlocked.length === 0;
       return;
     }
 
@@ -516,7 +511,9 @@ export const ParagonUI = {
 
     for (const [key, label] of Object.entries(STAT_LABELS)) {
       const val = stats[key] ?? 0;
+      if (val === 0) continue;
       const tr  = document.createElement('tr');
+      tr.dataset.stat = key;
       const td1 = document.createElement('td');
       td1.className   = 'stat-label';
       td1.textContent = label;
@@ -693,29 +690,6 @@ export const ParagonUI = {
       this._renderSkillPanels();
     });
 
-    // Assign ability button (cycles to next unassigned ability)
-    document.getElementById('btn-assign-ability')?.addEventListener('click', () => {
-      if (_isLocked() || _selectedSkillPanel === null || _selectedAbilitySlot === null) return;
-      const ps   = _paragonState(_selectedId);
-      const tree = ps.activeSkillTypes[_selectedSkillPanel];
-      const def  = DATA.actors[_selectedId];
-      const unlocked = tree ? getUnlockedAbilities(tree, def) : [];
-      if (unlocked.length === 0) return;
-      if (!ps.skillAbilitySlots[tree]) ps.skillAbilitySlots[tree] = [null, null, null, null];
-      const slots = ps.skillAbilitySlots[tree];
-      const usedElsewhere = new Set(
-        slots.filter((id, i) => i !== _selectedAbilitySlot && id)
-      );
-      const available = unlocked.filter(a => !usedElsewhere.has(a.id));
-      if (available.length === 0) return;
-      const current = slots[_selectedAbilitySlot];
-      const idx     = available.findIndex(a => a.id === current);
-      const next    = available[(idx + 1) % available.length];
-      slots[_selectedAbilitySlot] = next.id;
-      _save();
-      this._renderSkillPanels();
-    });
-
     // ── Hover tooltips ────────────────────────────────────────────────────
 
     // Ability slots in skill panels
@@ -760,5 +734,13 @@ export const ParagonUI = {
       if (def) Tooltips.showItem(e, item, def);
     });
     document.getElementById('paragon-selection-panel')?.addEventListener('mouseleave', () => Tooltips.hide());
+
+    // Stat tooltips (Stats sub-tab)
+    document.getElementById('paragon-stat-table')?.addEventListener('mouseover', e => {
+      const tr = e.target.closest('tr[data-stat]');
+      if (!tr) return;
+      Tooltips.showStat(e, tr.dataset.stat);
+    });
+    document.getElementById('paragon-stat-table')?.addEventListener('mouseleave', () => Tooltips.hide());
   },
 };

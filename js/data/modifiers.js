@@ -97,13 +97,13 @@ export const modifiers = {
     baseValue: 0.02, valuePerLevel: 0.005,
   },
 
-  tactics_cooldown_reduction: {
-    id: 'tactics_cooldown_reduction', name: 'Cooldown Reduction',
+  tactics_flat_dmg: {
+    id: 'tactics_flat_dmg', name: 'Tactical Damage',
     modifierType: ModifierType.TACTICS,
-    modClass: 'stat', effectTarget: 'cooldownReduct',
+    modClass: 'stat', effectTarget: 'flatDmg',
     isRollable: true,
     allowedItemTypes: null, // all item types
-    baseValue: 0.5, valuePerLevel: 0.1,
+    baseValue: 1, valuePerLevel: 0.4,
   },
 
   // ── Rollable fire mods ────────────────────────────────────────────────────

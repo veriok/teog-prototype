@@ -35,7 +35,6 @@ export function computeActorStats(actor) {
     flatDmg:       0,
     critChance:    0,
     speed:         actor.baseSpeed,
-    cooldownReduct:0,
     blockBonus:    0,
     armorRegen:    0,
     fireDmgBonus:  0,

@@ -2118,6 +2118,10 @@ body {
   box-shadow: inset 0 0 8px rgba(212,168,67,0.15);
 }
 .equip-slot.filled { border-color: var(--border-bright); }
+.equip-slot.filled.rarity-uncommon  { border-color: #4a9e5a; }
+.equip-slot.filled.rarity-rare      { border-color: var(--text-blue); }
+.equip-slot.filled.rarity-legendary { border-color: var(--text-gold); box-shadow: inset 0 0 6px rgba(212,168,67,0.18); }
+.equip-slot.filled.rarity-junk      { border-color: var(--text-dim); }
 
 .equip-icon  { font-size: 1.1rem; line-height: 1; }
 .equip-label {
@@ -2277,6 +2281,17 @@ body {
   text-overflow: ellipsis;
   max-width: 100%;
 }
+.abil-slot-rank {
+  position: absolute;
+  bottom: 2px;
+  right: 3px;
+  font-family: var(--font-heading);
+  font-size: 0.38rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  line-height: 1;
+}
 .abil-slot-empty {
   font-family: var(--font-heading);
   font-size: 0.38rem;
@@ -2339,32 +2354,44 @@ body {
   line-height: 1.4;
 }
 
-/* Item rows in equip selection */
+/* Item grid in equip selection */
+#selection-equip-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 6px;
+}
+
+/* Rarity text colour classes — item names in selection grid */
+.rarity-text-common    { color: #ffffff; }
+.rarity-text-uncommon  { color: #4a9e5a; }
+.rarity-text-rare      { color: var(--text-blue); }
+.rarity-text-legendary { color: var(--text-gold); }
+.rarity-text-junk      { color: var(--text-dim); }
+
+/* Item card in equip selection grid */
 .selection-item-row {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 5px 8px;
+  gap: 3px;
+  padding: 7px 4px 5px;
   border: 1px solid var(--border-dim);
-  border-radius: 2px;
+  border-radius: 3px;
   cursor: pointer;
   background: var(--bg-deep);
   transition: border-color var(--transition), background var(--transition);
+  text-align: center;
+  min-width: 0;
 }
 .selection-item-row:hover { background: var(--bg-card-hover); border-color: var(--border-bright); }
-.selection-item-row .item-icon  { font-size: 1rem; }
+.selection-item-row .item-icon  { font-size: 1.25rem; line-height: 1; }
 .selection-item-row .item-name  {
-  flex: 1;
   font-family: var(--font-body);
-  font-size: 0.8rem;
-  color: var(--text-parchment);
-}
-.selection-item-row .item-rarity {
-  font-family: var(--font-heading);
-  font-size: 0.5rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-dim);
+  font-size: 0.6rem;
+  line-height: 1.2;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 .selection-equip-empty {
   font-family: var(--font-body);
@@ -2408,11 +2435,6 @@ body {
   color: var(--text-parchment);
 }
 
-#selection-ability .btn {
-  align-self: flex-start;
-  margin-top: 4px;
-}
-
 /* ── Stats sub-tab ──────────────────────────────────────────────────────── */
 
 #paragon-stat-table {
@@ -2435,6 +2457,7 @@ body {
   color: var(--text-dim);
   padding: 5px 12px 5px 0;
   white-space: nowrap;
+  cursor: help;
 }
 
 .stat-value {

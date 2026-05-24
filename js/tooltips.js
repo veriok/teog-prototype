@@ -3,6 +3,38 @@
 // Singleton that owns the single tooltip <div>, cursor tracking, and all
 // HTML builders.  Import Tooltips wherever hover tooltips are needed.
 
+// ── Stat metadata (for the Stats sub-tab tooltips) ───────────────────────
+
+const STAT_NAMES = {
+  hp:             'HP',
+  armor:          'Armor',
+  slashingDmg:    'Slashing Dmg',
+  flatDmg:        'Flat Dmg',
+  critChance:     'Crit Chance',
+  speed:          'Speed',
+  blockBonus:     'Block Bonus',
+  armorRegen:     'Armor Regen',
+  fireDmgBonus:   'Fire Dmg Bonus',
+  burnDuration:   'Burn Duration',
+  voidDmgBonus:   'Void Dmg Bonus',
+  entropyBonus:   'Entropy Bonus',
+};
+
+const STAT_DESCRIPTIONS = {
+  hp:             'Maximum hit points. When reduced to 0 the paragon is knocked out of battle.',
+  armor:          'Absorbs incoming damage before HP is reduced. Regenerates fully between battles.',
+  slashingDmg:    'Extra damage added to physical slashing attacks.',
+  flatDmg:        'Flat bonus added to all damaging abilities regardless of type.',
+  critChance:     'Probability (0–1) that an attack deals double damage.',
+  speed:          'Global speed multiplier applied to all ability cooldowns. Higher means faster.',
+  blockBonus:     'Increases damage absorbed per block stack.',
+  armorRegen:     'Armor points restored each second while in combat.',
+  fireDmgBonus:   'Percentage bonus applied to all fire-element damage dealt.',
+  burnDuration:   'Extends the duration of all burn stacks inflicted by this paragon.',
+  voidDmgBonus:   'Percentage bonus applied to all void-element damage dealt.',
+  entropyBonus:   'Amplifies entropy effects — stacks accumulate faster and trigger more often.',
+};
+
 // ── Formatting helpers ────────────────────────────────────────────────────
 
 function _capitalize(str) {
@@ -92,6 +124,17 @@ export const Tooltips = {
     if (!def.canDestroy) html += ` · <span style="color:var(--text-gold)">Cannot be destroyed</span>`;
     html += `</div>`;
 
+    this.showRaw(html, e);
+  },
+
+  // ── Stat tooltip (for the Stats sub-tab) ─────────────────────────────────
+  // statKey : one of the STAT_NAMES keys
+  showStat(e, statKey) {
+    const name = STAT_NAMES[statKey];
+    const desc = STAT_DESCRIPTIONS[statKey];
+    if (!name && !desc) return;
+    let html = `<strong>${name ?? statKey}</strong>`;
+    if (desc) html += `<div style="max-width:200px;margin-top:4px;font-size:0.76rem;color:var(--text-parchment);line-height:1.45">${desc}</div>`;
     this.showRaw(html, e);
   },
 
