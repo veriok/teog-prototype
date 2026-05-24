@@ -9,7 +9,7 @@ export const Save = {
   // ── Default state ──────────────────────────────────────────────────────
   _default() {
     return {
-      version: 3,
+      version: 4,
       selectedLocationId: null,
       locationProgress: {
         flooded_cellars: { currentEventIndex: 0, completedEvents: [], zoneConquered: false }
@@ -22,6 +22,11 @@ export const Save = {
       inventoryCapacity: 20,
       introPlayed: false,
       savedAt: null,
+      // v4 — Paragon screen
+      unlockedParagonIds: [],      // populated by main.js from DATA on first run
+      paragonStates:      {},      // keyed by paragonId; initialized lazily in ParagonUI
+      battlefield:        [],      // { row, index, paragonId }[]
+      inventoryItems:     [],      // serialized ItemInstance[]
     };
   },
 
@@ -49,6 +54,14 @@ export const Save = {
       if (parsed.version < 3) {
         parsed.uniqueDroppedItems = [];
         parsed.version = 3;
+      }
+      // Migrate v3 → v4 (add Paragon screen state + inventory persistence)
+      if (parsed.version < 4) {
+        parsed.unlockedParagonIds = [];
+        parsed.paragonStates      = {};
+        parsed.battlefield        = [];
+        parsed.inventoryItems     = [];
+        parsed.version = 4;
       }
       return Object.assign(this._default(), parsed);
     } catch (e) {

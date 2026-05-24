@@ -17,7 +17,7 @@
 //     attacker:     ActorRuntime,
 //     defender:     ActorRuntime,
 //     damageType:   string,        // 'physical'|'fire'|'nature'|'void'|'true'
-//     abilityTag:   string|null,   // 'melee'|'ranged'|'spell'|null
+//     abilityTags:  string[]|null,   // AbilityTag[] — ability.tags from the executing ability
 //     isCrit:       boolean,
 //     locationMods: CombatModDescriptor[], // from BattleEngine.locationMods
 //   }
@@ -134,7 +134,7 @@ function _matchesCondition(condition, ctx) {
   if (condition.targetHasTag    != null && !ctx.defender.tags?.includes(condition.targetHasTag))   return false;
   if (condition.attackerHasTag  != null && !ctx.attacker.tags?.includes(condition.attackerHasTag)) return false;
   if (condition.damageType      != null && ctx.damageType   !== condition.damageType)               return false;
-  if (condition.abilityTag      != null && ctx.abilityTag   !== condition.abilityTag)               return false;
+  if (condition.abilityTag != null && !(ctx.abilityTags ?? []).includes(condition.abilityTag)) return false;
   if (condition.isCrit          != null && ctx.isCrit       !== condition.isCrit)                   return false;
   if (condition.targetHpBelow   != null) {
     const pct = ctx.defender.currentHP / ctx.defender.maxHP;

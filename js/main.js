@@ -4,11 +4,12 @@ import { DATA }              from './data/index.js';
 import { Save }              from './save.js';
 import { UI }                from './ui.js';
 import { BattleEngine }      from './battle.js';
-import { Inventory }         from './inventory.js';
+import { Inventory, EquippedItems } from './inventory.js';
 import { InventoryUI }       from './inventory-ui.js';
 import { collectBattleLoot, collectContainerLoot } from './loot.js';
 import { EventType }         from './enums.js';
 import { Cinematic }         from './cinematic.js';
+import { ParagonUI }         from './paragon-ui.js';
 
 const Game = {
 
@@ -19,13 +20,29 @@ const Game = {
   speedMult:      1,
   _defeatReturnTimer: null,
 
-  // ── Boot ───────────────────────────────────────────────────────────────
+  // ── Unified save helper ──────────────────────────────────────────
+  _save() {
+    this.state.inventoryItems = this.inventory.serialize();
+    Save.write(this.state);
+  },
+
+  // ── Boot ─────────────────────────────────────────────────────
   async init() {
     UI.init();
     this.state = Save.load();
 
+    // Seed unlocked paragons on first launch (any actor with subtype=paragon).
+    if (this.state.unlockedParagonIds.length === 0) {
+      this.state.unlockedParagonIds = Object.values(DATA.actors)
+        .filter(a => a.subtype === 'paragon')
+        .map(a => a.id);
+    }
+
     this.inventory = new Inventory(this.state.inventoryCapacity ?? 20);
-    InventoryUI.init(this.inventory, this.state, () => Save.write(this.state));
+    this.inventory.load(this.state.inventoryItems ?? []);
+
+    InventoryUI.init(this.inventory, this.state, () => this._save());
+    ParagonUI.init(this.state, this.inventory, () => this.engine, () => this._save());
 
     this._initNavTabs();
     this._initBattleControls();
@@ -41,7 +58,7 @@ const Game = {
     if (!this.state.introPlayed) {
       await Cinematic.play('game_intro');
       this.state.introPlayed = true;
-      Save.write(this.state);
+      this._save();
     }
   },
 
@@ -50,8 +67,7 @@ const Game = {
     document.querySelectorAll('.nav-tab').forEach(btn => {
       btn.addEventListener('click', () => {
         UI.switchTab(btn.dataset.tab);
-        if (btn.dataset.tab === 'inventory') InventoryUI.render();
-      });
+        if (btn.dataset.tab === 'inventory') InventoryUI.render();        if (btn.dataset.tab === 'paragons')  ParagonUI.render();      });
     });
   },
 
@@ -99,7 +115,7 @@ const Game = {
       if (this.engine) { this.engine.stop(); this.engine = null; }
       this.activeLocation = null;
       this.state.selectedLocationId = null;
-      Save.write(this.state);
+      this._save();
       UI.clearLog();
       UI.showLocationSelect();
       UI.renderLocationSelect(DATA.locations, this.state.locationProgress, locId => {
@@ -214,7 +230,7 @@ const Game = {
       ev, this.inventory, this.state, this.activeLocation.level
     );
     prog.completedEvents.push(prog.currentEventIndex);
-    Save.write(this.state);
+    this._save();
     if (InventoryUI._isInventoryTabActive()) InventoryUI.render();
     if (ev.cinematicId) await Cinematic.play(ev.cinematicId);
     UI.showLootModal(`Container — ${ev.label}`, added, currencies, overflowed, () => {
@@ -242,7 +258,38 @@ const Game = {
       (actor)     => UI.actorDied(actor)
     );
 
-    this.engine.init(['aldric', 'ysolde'], ev, this.activeLocation.combatMods ?? []);
+    // Build deployConfig from saved battlefield + paragon states.
+    const deployConfig = (this.state.battlefield ?? []).map(entry => {
+      const ps       = this.state.paragonStates?.[entry.paragonId];
+      const equipped = EquippedItems.deserialize(ps?.equippedItems ?? {});
+      const abilityIds = [];
+      for (const tree of (ps?.activeSkillTypes ?? [])) {
+        if (!tree) continue;
+        for (const id of (ps?.skillAbilitySlots?.[tree] ?? [])) {
+          if (id) abilityIds.push(id);
+        }
+      }
+      return {
+        actorId:      entry.paragonId,
+        row:          entry.row,
+        slotIndex:    entry.index,
+        abilityIds,
+        equippedItems: equipped,
+      };
+    });
+
+    // Fallback: if no battlefield configured, deploy default paragons.
+    const config = deployConfig.length > 0
+      ? deployConfig
+      : this.state.unlockedParagonIds.slice(0, 2).map((id, i) => ({
+          actorId: id, row: i === 0 ? 'front' : 'back', slotIndex: 0,
+          abilityIds: Object.values(
+            DATA.actors[id]?.abilities ?? []
+          ).map(a => a.abilityId),
+          equippedItems: new EquippedItems(),
+        }));
+
+    this.engine.init(config, ev, this.activeLocation.combatMods ?? []);
     this.engine.setSpeed(this.speedMult);
 
     UI.buildBattleCards(this.engine);
@@ -253,7 +300,7 @@ const Game = {
     document.getElementById('btn-next').disabled  = true;
 
     this.state.runCount++;
-    Save.write(this.state);
+    this._save();
     this._refreshStats();
 
     if (ev.cinematicId) await Cinematic.play(ev.cinematicId);
@@ -278,7 +325,7 @@ const Game = {
       const { added, overflowed } = collectBattleLoot(
         defeatedEnemies, this.inventory, this.state
       );
-      Save.write(this.state);
+      this._save();
 
       const isLastEvent = prog.currentEventIndex >= this.activeLocation.events.length - 1;
       if (isLastEvent) {
@@ -298,7 +345,7 @@ const Game = {
       prog.currentEventIndex = 0;
       prog.completedEvents   = [];
       UI.log('Defeat. The survivors retreat to the castle.', 'system');
-      Save.write(this.state);
+      this._save();
       this._refreshStats();
       UI.showModal(
         'Defeat',
@@ -308,7 +355,7 @@ const Game = {
       return;
     }
 
-    Save.write(this.state);
+    this._save();
     this._refreshStats();
   },
 
@@ -318,7 +365,7 @@ const Game = {
     if (this.engine) { this.engine.stop(); this.engine = null; }
     this.activeLocation = null;
     this.state.selectedLocationId = null;
-    Save.write(this.state);
+    this._save();
     UI.clearLog();
     UI.showLocationSelect();
     UI.renderLocationSelect(DATA.locations, this.state.locationProgress, locId => {
@@ -336,14 +383,14 @@ const Game = {
 
     if (prog.currentEventIndex >= this.activeLocation.events.length) {
       prog.zoneConquered = true;
-      Save.write(this.state);
+      this._save();
       this._applyEventToUI();
       return;
     }
 
     if (this.engine) { this.engine.stop(); this.engine = null; }
 
-    Save.write(this.state);
+    this._save();
     this._applyEventToUI();
   },
 
@@ -365,7 +412,7 @@ const Game = {
     prog.currentEventIndex = 0;
     prog.completedEvents   = [];
     prog.zoneConquered     = false;
-    Save.write(this.state);
+    this._save();
     UI.clearLog();
     this._applyEventToUI();
     UI.setStatus('Location reset. Ready to advance.', '');

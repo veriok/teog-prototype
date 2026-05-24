@@ -75,6 +75,33 @@ export const CURRENCY_CONFIG = Object.freeze({
   [Currency.SOULS]: { label: 'Souls', icon: '💀' },
 });
 
+// ── Skill trees (ability families) ────────────────────────────────────────
+// Used as ability.tree and as the dropdown keys in the Paragon skill panel.
+export const SkillType = Object.freeze({
+  SWORD:   'sword',
+  SHIELD:  'shield',
+  TACTICS: 'tactics',
+  FIRE:    'fire',
+  VOID:    'void',
+});
+
+// ── Ability combat tags ────────────────────────────────────────────────────
+// Stored as ability.tags: AbilityTag[]. Used in mod conditions such as
+// "+20% to fire abilities" → condition.abilityTag = AbilityTag.FIRE.
+export const AbilityTag = Object.freeze({
+  MELEE:     'melee',
+  RANGED:    'ranged',
+  SPELL:     'spell',
+  DEFENSIVE: 'defensive',
+  SUPPORT:   'support',
+  CAST:      'cast',
+});
+
+// ── Battlefield deployment cap ─────────────────────────────────────────────
+// Maximum number of paragons the player can deploy at once.
+// Will be raised by castle upgrades in a future update.
+export const MAX_DEPLOYED_PARAGONS = 2;
+
 // ── Event types ─────────────────────────────────────────────────────────
 export const EventType = Object.freeze({
   FIGHT: 'fight',

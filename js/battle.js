@@ -47,7 +47,7 @@ export class ActorRuntime {
       const rankDef = abDef.ranks[a.rank - 1] || abDef.ranks[0];
       return {
         id: abDef.id, name: abDef.name, icon: abDef.icon,
-        tag: abDef.tag, targeting: abDef.targeting,
+        tags: abDef.tags ?? [], targeting: abDef.targeting,
         execute: abDef.execute.bind(abDef),
         currentRank: a.rank, rankDef,
         maxCooldown: rankDef.cooldown,
@@ -163,11 +163,40 @@ export class BattleEngine {
   }
 
   // ── Build actors ───────────────────────────────────────────────────────
-  init(paragonIds, eventDef, locationMods = []) {
+  // deployConfig: Array of {
+  //   actorId:      string,
+  //   row:          'front'|'back',
+  //   slotIndex:    number,
+  //   abilityIds:   string[],  // non-null ability ids from both skill panels
+  //   equippedItems: EquippedItems,
+  // }
+  init(deployConfig, eventDef, locationMods = []) {
     this.locationMods = locationMods;
-    this.paragons = paragonIds.map(id => {
-      const actor = new ActorRuntime(DATA.actors[id]);
-      equipActorItems(DATA.actors[id], actor);
+    this.paragons = deployConfig.map(cfg => {
+      const def   = DATA.actors[cfg.actorId];
+      const actor = new ActorRuntime({ ...def, row: cfg.row });
+
+      // Replace abilities with only those the player has assigned.
+      // An empty list is valid — the paragon simply won't act.
+      actor.abilities = (cfg.abilityIds ?? []).map(abilityId => {
+        const entry  = def.abilities.find(a => a.abilityId === abilityId);
+        const abDef  = DATA.abilities[abilityId];
+        if (!abDef || !entry) return null;
+        const rankDef = abDef.ranks[entry.rank - 1] || abDef.ranks[0];
+        return {
+          id: abDef.id, name: abDef.name, icon: abDef.icon,
+          tags: abDef.tags ?? [], targeting: abDef.targeting,
+          execute: abDef.execute.bind(abDef),
+          currentRank: entry.rank, rankDef,
+          maxCooldown: rankDef.cooldown,
+          currentCooldown: rankDef.cooldown * Math.random(),
+          cost: rankDef.cost || null,
+          isPassive: abDef.isPassive || false,
+        };
+      }).filter(Boolean);
+
+      // Use pre-built EquippedItems from paragon state (already deserialized).
+      actor.equippedItems = cfg.equippedItems ?? actor.equippedItems;
       computeActorStats(actor);
       return actor;
     });
@@ -560,7 +589,7 @@ export class BattleEngine {
           const rankDef = abDef.ranks[a.rank - 1] || abDef.ranks[0];
           return {
             id: abDef.id, name: abDef.name, icon: abDef.icon,
-            tag: abDef.tag, targeting: abDef.targeting,
+            tags: abDef.tags ?? [], targeting: abDef.targeting,
             execute: abDef.execute.bind(abDef),
             currentRank: a.rank, rankDef,
             maxCooldown: rankDef.cooldown,
@@ -629,7 +658,7 @@ export class BattleEngine {
       if (ab.targeting === 'self' && actor.currentHP < actor.maxHP * 0.4) score += 3;
 
       // Prefer guard/defensive when taking lots of damage (armor < 30%)
-      if (ab.tag === 'defensive' && actor.currentArmor < actor.maxArmor * 0.3) score += 2;
+      if (ab.tags?.includes('defensive') && actor.currentArmor < actor.maxArmor * 0.3) score += 2;
 
       // Prefer AoE when multiple enemies
       if ((ab.targeting === 'all_enemies' || ab.targeting === 'all_players' || ab.targeting === 'all_player_front') && enemies.length >= 2) score += 1.5;

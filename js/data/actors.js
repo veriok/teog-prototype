@@ -5,6 +5,7 @@ export const actors = {
   aldric: {
     id: 'aldric', name: 'Sir Aldric', role: 'Knight', icon: '🛡️',
     portrait: 'assets/actors/aldric.png',
+    bio: 'A battle-hardened knight of the old order. Sworn to shield those who cannot shield themselves.',
     subtype: 'paragon', row: 'front',
     tags: ['paragon', 'humanoid'],
     baseHP: 160, baseArmor: 80,
@@ -21,6 +22,7 @@ export const actors = {
   ysolde: {
     id: 'ysolde', name: 'Ysolde', role: 'Mage', icon: '🔮',
     portrait: 'assets/actors/ysolde.png',
+    bio: 'A scholar of the void arts. She studies destruction with the calm of someone who has already seen the end.',
     subtype: 'paragon', row: 'back',
     tags: ['paragon', 'humanoid'],
     baseHP: 95, baseArmor: 30,

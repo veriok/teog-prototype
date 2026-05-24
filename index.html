@@ -143,11 +143,217 @@
 
     <!-- Paragons tab -->
     <div class="tab-panel" id="tab-paragons">
-      <div class="tab-placeholder">
-        <div class="tab-placeholder-title">Paragons</div>
-        <div class="tab-placeholder-text">Hero management — coming in a future update.</div>
-      </div>
-    </div>
+
+      <!-- ── Battlefield Deployment ──────────────────────────────────── -->
+      <section id="paragon-battlefield">
+        <div class="battlefield-header">
+          <h3>Battlefield Deployment</h3>
+          <span id="paragon-deploy-count" class="deploy-count"></span>
+        </div>
+        <div class="battlefield-rows">
+          <div class="battlefield-row" data-row="front">
+            <span class="row-label">Front</span>
+            <div class="battlefield-slots">
+              <div class="battlefield-slot" data-row="front" data-index="0"></div>
+              <div class="battlefield-slot" data-row="front" data-index="1"></div>
+              <div class="battlefield-slot" data-row="front" data-index="2"></div>
+            </div>
+          </div>
+          <div class="battlefield-row" data-row="back">
+            <span class="row-label">Back</span>
+            <div class="battlefield-slots">
+              <div class="battlefield-slot" data-row="back" data-index="0"></div>
+              <div class="battlefield-slot" data-row="back" data-index="1"></div>
+              <div class="battlefield-slot" data-row="back" data-index="2"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Paragon List + Detail ──────────────────────────────────── -->
+      <div id="paragon-main">
+
+        <!-- Left: roster list -->
+        <aside id="paragon-list">
+          <!-- JS rendered: .paragon-list-item elements -->
+        </aside>
+
+        <!-- Right: selected paragon detail -->
+        <div id="paragon-detail">
+          <div id="paragon-detail-empty">Select a paragon to view details.</div>
+
+          <div id="paragon-detail-content" style="display:none">
+
+            <!-- Sub-tab nav -->
+            <nav id="paragon-subtab-nav">
+              <button class="paragon-subtab-btn active" data-subtab="equip">Equipment &amp; Abilities</button>
+              <button class="paragon-subtab-btn" data-subtab="stats">Stats</button>
+            </nav>
+
+            <!-- ── Sub-tab: Equipment & Abilities ──────────────────── -->
+            <div class="paragon-subtab" id="paragon-subtab-equip">
+              <div id="equip-layout">
+
+                <!-- ╔══════════════╗  Left column: portrait (top) + equipment (bottom) -->
+                <div id="equip-col-left">
+
+                  <!-- Portrait section -->
+                  <div id="equip-portrait-section">
+                    <div id="paragon-portrait-cell">
+                      <img id="paragon-portrait-img" src="" alt="">
+                    </div>
+                    <div id="paragon-portrait-info">
+                      <span id="paragon-portrait-name"></span>
+                      <p id="paragon-lore-text"></p>
+                    </div>
+                  </div>
+
+                  <!-- Equipment slots (each wrapped so Remove button sits below) -->
+                  <div id="equip-slots-section">
+                    <div id="paragon-equip-grid">
+                      <div class="equip-slot-wrapper">
+                        <div class="equip-slot" data-slot="helmet"></div>
+                        <button class="btn-equip-remove" data-slot="helmet">Remove</button>
+                      </div>
+                      <div class="equip-slot-wrapper">
+                        <div class="equip-slot" data-slot="amulet"></div>
+                        <button class="btn-equip-remove" data-slot="amulet">Remove</button>
+                      </div>
+                      <div class="equip-slot-wrapper">
+                        <div class="equip-slot" data-slot="cloak"></div>
+                        <button class="btn-equip-remove" data-slot="cloak">Remove</button>
+                      </div>
+                      <div class="equip-slot-wrapper">
+                        <div class="equip-slot" data-slot="main_hand"></div>
+                        <button class="btn-equip-remove" data-slot="main_hand">Remove</button>
+                      </div>
+                      <div class="equip-slot-wrapper">
+                        <div class="equip-slot" data-slot="offhand"></div>
+                        <button class="btn-equip-remove" data-slot="offhand">Remove</button>
+                      </div>
+                      <div class="equip-slot-wrapper">
+                        <div class="equip-slot" data-slot="body"></div>
+                        <button class="btn-equip-remove" data-slot="body">Remove</button>
+                      </div>
+                      <div class="equip-slot-wrapper">
+                        <div class="equip-slot" data-slot="gloves"></div>
+                        <button class="btn-equip-remove" data-slot="gloves">Remove</button>
+                      </div>
+                      <div class="equip-slot-wrapper">
+                        <div class="equip-slot" data-slot="boots"></div>
+                        <button class="btn-equip-remove" data-slot="boots">Remove</button>
+                      </div>
+                      <div class="equip-slot-wrapper">
+                        <div class="equip-slot" data-slot="belt"></div>
+                        <button class="btn-equip-remove" data-slot="belt">Remove</button>
+                      </div>
+                      <div class="equip-slot-wrapper">
+                        <div class="equip-slot" data-slot="ring"></div>
+                        <button class="btn-equip-remove" data-slot="ring">Remove</button>
+                      </div>
+                    </div>
+                  </div>
+
+                </div><!-- /equip-col-left -->
+
+                <!-- ╔══════════════╗  Right column: skills (top) + selection panel (bottom) -->
+                <div id="equip-col-right">
+
+                  <!-- Two skill rows: each row = [dropdown] [4 slots] -->
+                  <div id="paragon-skills">
+                    <div class="skill-panel" data-panel="0">
+                      <select class="skill-tree-select" data-panel="0">
+                        <option value="">— Choose skill —</option>
+                      </select>
+                      <div class="skill-ability-slots">
+                        <div class="skill-slot-wrapper">
+                          <div class="skill-ability-slot" data-panel="0" data-slot="0"></div>
+                          <button class="btn-ability-remove" data-panel="0" data-slot="0">Remove</button>
+                        </div>
+                        <div class="skill-slot-wrapper">
+                          <div class="skill-ability-slot" data-panel="0" data-slot="1"></div>
+                          <button class="btn-ability-remove" data-panel="0" data-slot="1">Remove</button>
+                        </div>
+                        <div class="skill-slot-wrapper">
+                          <div class="skill-ability-slot" data-panel="0" data-slot="2"></div>
+                          <button class="btn-ability-remove" data-panel="0" data-slot="2">Remove</button>
+                        </div>
+                        <div class="skill-slot-wrapper">
+                          <div class="skill-ability-slot" data-panel="0" data-slot="3"></div>
+                          <button class="btn-ability-remove" data-panel="0" data-slot="3">Remove</button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="skill-panel" data-panel="1">
+                      <select class="skill-tree-select" data-panel="1">
+                        <option value="">— Choose skill —</option>
+                      </select>
+                      <div class="skill-ability-slots">
+                        <div class="skill-slot-wrapper">
+                          <div class="skill-ability-slot" data-panel="1" data-slot="0"></div>
+                          <button class="btn-ability-remove" data-panel="1" data-slot="0">Remove</button>
+                        </div>
+                        <div class="skill-slot-wrapper">
+                          <div class="skill-ability-slot" data-panel="1" data-slot="1"></div>
+                          <button class="btn-ability-remove" data-panel="1" data-slot="1">Remove</button>
+                        </div>
+                        <div class="skill-slot-wrapper">
+                          <div class="skill-ability-slot" data-panel="1" data-slot="2"></div>
+                          <button class="btn-ability-remove" data-panel="1" data-slot="2">Remove</button>
+                        </div>
+                        <div class="skill-slot-wrapper">
+                          <div class="skill-ability-slot" data-panel="1" data-slot="3"></div>
+                          <button class="btn-ability-remove" data-panel="1" data-slot="3">Remove</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div><!-- /paragon-skills -->
+
+                  <!-- Unified selection panel -->
+                  <div id="paragon-selection-panel">
+                    <div id="selection-hint">Select an equipment or ability slot.</div>
+                    <!-- Shows matching inventory items when an equip slot is selected -->
+                    <div id="selection-equip" style="display:none">
+                      <div class="selection-header" id="selection-equip-header"></div>
+                      <div id="selection-equip-list"></div>
+                    </div>
+                    <!-- Shows available abilities when a skill slot is selected -->
+                    <div id="selection-ability" style="display:none">
+                      <div class="selection-header">
+                        <span id="selection-abil-name"></span>
+                        <span id="selection-abil-tags"></span>
+                      </div>
+                      <p id="selection-abil-desc"></p>
+                      <div id="selection-abil-list"></div>
+                      <button class="btn btn-sm" id="btn-assign-ability">Assign</button>
+                    </div>
+                  </div>
+
+                </div><!-- /equip-col-right -->
+
+              </div><!-- /equip-layout -->
+            </div><!-- /paragon-subtab-equip -->
+
+            <!-- ── Sub-tab: Stats ───────────────────────────────────── -->
+            <div class="paragon-subtab" id="paragon-subtab-stats" style="display:none">
+              <table id="paragon-stat-table">
+                <tbody id="paragon-stat-rows">
+                  <!-- JS rendered: <tr><td class="stat-label"></td><td class="stat-value"></td></tr> -->
+                </tbody>
+              </table>
+            </div>
+
+          </div><!-- /paragon-detail-content -->
+
+          <!-- Locked overlay shown during battle -->
+          <div id="paragon-locked-overlay" style="display:none">
+            <span>Cannot edit paragons during battle.</span>
+          </div>
+        </div><!-- /paragon-detail -->
+
+      </div><!-- /paragon-main -->
+
+    </div><!-- /tab-paragons -->
 
     <!-- Inventory tab -->
     <div class="tab-panel" id="tab-inventory">

@@ -54,6 +54,63 @@ export class ItemInstance {
 
     return genericCount <= 1 && nonGenericTypes.size <= 2;
   }
+
+  // ── Serialization ────────────────────────────────────────────────────
+  // Returns a plain JSON-safe object. instanceId is intentionally omitted —
+  // it is ephemeral and will be re-assigned on deserialize.
+  serialize() {
+    return {
+      definitionId:  this.definitionId,
+      rarity:        this.rarity,
+      isUnique:      this.isUnique,
+      baseAttribute: this.baseAttribute
+        ? { id: this.baseAttribute.id, level: this.baseAttribute.level }
+        : null,
+      slots: this.slots.map(m => ({ id: m.id, level: m.level })),
+    };
+  }
+
+  // Reconstructs an ItemInstance from a serialized snapshot.
+  // Returns null if the definition or base modifier cannot be resolved.
+  static deserialize(raw) {
+    if (!raw?.definitionId) return null;
+    const baseTpl = raw.baseAttribute ? DATA.modifiers[raw.baseAttribute.id] : null;
+    const baseAttribute = baseTpl
+      ? new Modifier({
+          id:           baseTpl.id,
+          name:         baseTpl.name,
+          level:        raw.baseAttribute.level,
+          modifierType: baseTpl.modifierType,
+          effectValue:  baseTpl.baseValue + baseTpl.valuePerLevel * raw.baseAttribute.level,
+          triggerValue: baseTpl.triggerBaseValue != null
+            ? baseTpl.triggerBaseValue + baseTpl.triggerValuePerLevel * raw.baseAttribute.level
+            : null,
+        })
+      : null;
+
+    const slots = (raw.slots ?? []).map(s => {
+      const tpl = DATA.modifiers[s.id];
+      if (!tpl) return null;
+      return new Modifier({
+        id:           tpl.id,
+        name:         tpl.name,
+        level:        s.level,
+        modifierType: tpl.modifierType,
+        effectValue:  tpl.baseValue + tpl.valuePerLevel * s.level,
+        triggerValue: tpl.triggerBaseValue != null
+          ? tpl.triggerBaseValue + tpl.triggerValuePerLevel * s.level
+          : null,
+      });
+    }).filter(Boolean);
+
+    return new ItemInstance({
+      definitionId:  raw.definitionId,
+      rarity:        raw.rarity,
+      isUnique:      raw.isUnique ?? false,
+      baseAttribute,
+      slots,
+    });
+  }
 }
 
 // ── rollItemInstance ────────────────────────────────────────────────────────
@@ -154,6 +211,23 @@ export class Inventory {
   get(index) {
     return this.slots[index] ?? null;
   }
+
+  // ── Serialization ────────────────────────────────────────────────────
+  // Returns an array of serialized item snapshots (no nulls — compact form).
+  serialize() {
+    return this.slots.map(item => item.serialize());
+  }
+
+  // Repopulates the inventory from a serialized array.
+  // Silently skips entries that cannot be resolved.
+  load(rawArray) {
+    this.slots = [];
+    if (!Array.isArray(rawArray)) return;
+    for (const raw of rawArray) {
+      const item = ItemInstance.deserialize(raw);
+      if (item) this.slots.push(item);
+    }
+  }
 }
 
 // ── EquippedItems ──────────────────────────────────────────────────────────
@@ -210,6 +284,31 @@ export class EquippedItems extends EventTarget {
   // Returns a shallow copy of the full slot map.
   getAll() {
     return { ...this._slots };
+  }
+
+  // ── Serialization ────────────────────────────────────────────────────
+  // Returns a plain object keyed by ItemType with serialized items or null.
+  serialize() {
+    return Object.fromEntries(
+      Object.entries(this._slots).map(([k, v]) => [k, v ? v.serialize() : null])
+    );
+  }
+
+  // Reconstructs an EquippedItems instance from a serialized snapshot.
+  // Silently skips slots whose item data cannot be resolved.
+  static deserialize(data) {
+    const instance = new EquippedItems();
+    if (!data) return instance;
+    for (const [itemType, raw] of Object.entries(data)) {
+      if (!raw) continue;
+      try {
+        const item = ItemInstance.deserialize(raw);
+        if (item) instance._slots[itemType] = item;
+      } catch (e) {
+        console.warn('EquippedItems.deserialize: skipping slot', itemType, e);
+      }
+    }
+    return instance;
   }
 }
 
