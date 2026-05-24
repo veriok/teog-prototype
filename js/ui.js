@@ -2,20 +2,16 @@
 
 import { DATA }           from './data/index.js';
 import { CURRENCY_CONFIG } from './enums.js';
+import { Tooltips }        from './tooltips.js';
 
 export const UI = {
 
   // ── Card registry: actorId -> DOM element ─────────────────────────────
   _cards: new Map(),
-  _tooltip: null,
 
   // ── Init ──────────────────────────────────────────────────────────────
   init() {
-    this._tooltip = document.createElement('div');
-    this._tooltip.className = 'tooltip';
-    this._tooltip.style.display = 'none';
-    document.body.appendChild(this._tooltip);
-    document.addEventListener('mousemove', e => this._moveTooltip(e));
+    Tooltips.init();
   },
 
   // ── Build all actor cards for a battle ────────────────────────────────
@@ -155,8 +151,8 @@ export const UI = {
       el.className = 'ability-icon on-cd';
       el.dataset.abilityId = ab.id;
       el.innerHTML = `${ab.icon}<div class="cd-overlay" style="height:100%"></div>`;
-      el.addEventListener('mouseenter', e => this._showTooltip(e, ab));
-      el.addEventListener('mouseleave', () => this._hideTooltip());
+      el.addEventListener('mouseenter', e => Tooltips.showAbility(e, ab, ab.currentRank - 1));
+      el.addEventListener('mouseleave', () => Tooltips.hide());
       container.appendChild(el);
     });
 
@@ -167,7 +163,7 @@ export const UI = {
       el.dataset.role = 'special';
       el.textContent = actor.specialAttack.icon;
       el.addEventListener('mouseenter', e => this._showSpecialTooltip(e, actor));
-      el.addEventListener('mouseleave', () => this._hideTooltip());
+      el.addEventListener('mouseleave', () => Tooltips.hide());
       container.appendChild(el);
     }
   },
@@ -311,44 +307,7 @@ export const UI = {
     setTimeout(() => el.remove(), 900);
   },
 
-  // ── Tooltip ────────────────────────────────────────────────────────────
-  _showTooltip(e, ability) {
-    const rank = ability.rankDef;
-    const dtype = rank.damageType
-      ? ` <span style="color:var(--text-dim);font-size:0.75rem">(${rank.damageType})</span>`
-      : '';
-
-    let html = `<strong>${ability.icon} ${ability.name}</strong>`;
-    html += `<div class="tt-cd">CD: ${rank.cooldown}s</div>`;
-    if (rank.cost)         html += `<div class="tt-res">Cost: ${rank.cost.amount} ${rank.cost.type}</div>`;
-
-    // Damage
-    if (rank.damage)       html += `<div class="tt-dmg">Damage: ${rank.damage}${dtype}</div>`;
-    if (rank.splashDmg)    html += `<div class="tt-dmg">Splash: ${rank.splashDmg}${dtype}</div>`;
-
-    // Crowd-control / status
-    if (rank.stunDuration) html += `<div>Stun: ${rank.stunDuration}s</div>`;
-    if (rank.rootDuration) html += `<div>Root: ${rank.rootDuration}s</div>`;
-    if (rank.stacks)       html += `<div>Bleed: +${rank.stacks} stacks (${rank.duration}s)</div>`;
-    if (rank.burnChance && rank.burnChance > 0)
-                           html += `<div>Burn chance: ${Math.round(rank.burnChance * 100)}%</div>`;
-    if (rank.burnStacks)   html += `<div>Burn: +${rank.burnStacks} stacks (8s)</div>`;
-    if (rank.slowStacks)   html += `<div>Slow: +${rank.slowStacks} stacks (${rank.slowDuration}s)</div>`;
-    if (rank.hasteStacks)  html += `<div>Haste: +${rank.hasteStacks} stacks (${rank.hasteDuration}s)</div>`;
-
-    // Defensive / utility
-    if (rank.guardStacks)  html += `<div>Guard: +${rank.guardStacks} stacks (12s)</div>`;
-    if (rank.healHp)       html += `<div>Heal: ${rank.healHp} HP</div>`;
-    if (rank.armorRestore) html += `<div>Restore Armor: +${rank.armorRestore}</div>`;
-    if (rank.threatDrain)  html += `<div>Drain Threat: ${rank.threatDrain}</div>`;
-    if (rank.selfThreat)   html += `<div>Gain Threat: +${rank.selfThreat}</div>`;
-
-    html += `<div style="margin-top:4px;font-style:italic;color:#7a6e8a">Rank ${ability.currentRank}</div>`;
-    this._tooltip.innerHTML = html;
-    this._tooltip.style.display = 'block';
-    this._moveTooltip(e);
-  },
-
+  // ── Tooltip (delegates to Tooltips singleton) ─────────────────────────
   _showSpecialTooltip(e, actor) {
     const sp = actor.phase2Active && actor.phase2SpecialAttack
       ? actor.phase2SpecialAttack
@@ -360,25 +319,7 @@ export const UI = {
       html += `<div style="color:var(--text-gold);font-size:0.75rem;margin-top:2px">— Phase Transition —</div>`;
     if (!actor.phase2Active && actor.phase2SpecialAttack)
       html += `<div style="color:var(--text-dim);font-size:0.72rem;margin-top:2px">Phase 2 special unlocks after transition</div>`;
-    this._tooltip.innerHTML = html;
-    this._tooltip.style.display = 'block';
-    this._moveTooltip(e);
-  },
-
-  _hideTooltip() {
-    this._tooltip.style.display = 'none';
-  },
-
-  _moveTooltip(e) {
-    if (this._tooltip.style.display === 'none') return;
-    const tw = this._tooltip.offsetWidth;
-    const th = this._tooltip.offsetHeight;
-    let x = e.clientX + 14;
-    let y = e.clientY + 14;
-    if (x + tw > window.innerWidth  - 8) x = e.clientX - tw - 14;
-    if (y + th > window.innerHeight - 8) y = e.clientY - th - 14;
-    this._tooltip.style.left = `${x}px`;
-    this._tooltip.style.top  = `${y}px`;
+    Tooltips.showRaw(html, e);
   },
 
   // ── Event track ────────────────────────────────────────────────────────
@@ -676,15 +617,8 @@ export const UI = {
     if (panel) panel.style.display = 'none';
   },
 
-  // ── Public tooltip helpers (used by InventoryUI and others) ────────────
-  showRawTooltip(html, e) {
-    this._tooltip.innerHTML = html;
-    this._tooltip.style.display = 'block';
-    this._moveTooltip(e);
-  },
-
-  hideTooltip() {
-    this._hideTooltip();
-  },
+  // ── Public tooltip helpers — thin delegators for backward compat ────────
+  showRawTooltip(html, e) { Tooltips.showRaw(html, e); },
+  hideTooltip()            { Tooltips.hide(); },
 };
 

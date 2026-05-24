@@ -9,6 +9,7 @@ import { ItemType, SkillType, MAX_DEPLOYED_PARAGONS } from './enums.js';
 import { canEquip, getUnlockedAbilities }  from './paragon.js';
 import { EquippedItems }                   from './inventory.js';
 import { computeActorStats }               from './stats.js';
+import { Tooltips }                        from './tooltips.js';
 
 // ── Internal state ────────────────────────────────────────────────────────
 
@@ -353,6 +354,7 @@ export const ParagonUI = {
 
         slotEl.classList.remove('selected', 'filled', 'empty');
         slotEl.textContent = '';
+        slotEl.dataset.abilityId = abilityId ?? '';
         if (wrapper) wrapper.classList.toggle('filled', !!ab);
         if (isSelected) slotEl.classList.add('selected');
 
@@ -713,5 +715,50 @@ export const ParagonUI = {
       _save();
       this._renderSkillPanels();
     });
+
+    // ── Hover tooltips ────────────────────────────────────────────────────
+
+    // Ability slots in skill panels
+    document.getElementById('paragon-skills')?.addEventListener('mouseover', e => {
+      const slot = e.target.closest('.skill-ability-slot');
+      if (!slot) return;
+      const id = slot.dataset.abilityId;
+      if (!id) return;
+      const ab = DATA.abilities[id];
+      if (ab) Tooltips.showAbility(e, ab, 0);
+    });
+    document.getElementById('paragon-skills')?.addEventListener('mouseleave', () => Tooltips.hide());
+
+    // Ability candidates in selection panel
+    document.getElementById('selection-ability')?.addEventListener('mouseover', e => {
+      const row = e.target.closest('.abil-candidate');
+      if (!row) return;
+      const ab = DATA.abilities[row.dataset.abilityId];
+      if (ab) Tooltips.showAbility(e, ab, 0);
+    });
+    document.getElementById('selection-ability')?.addEventListener('mouseleave', () => Tooltips.hide());
+
+    // Filled equipment slots in equip grid
+    document.getElementById('paragon-equip-grid')?.addEventListener('mouseover', e => {
+      const slot = e.target.closest('.equip-slot.filled');
+      if (!slot || !_selectedId) return;
+      const item = _getEquipped(_selectedId).get(slot.dataset.slot);
+      if (!item) return;
+      const def = DATA.items[item.definitionId];
+      if (def) Tooltips.showItem(e, item, def);
+    });
+    document.getElementById('paragon-equip-grid')?.addEventListener('mouseleave', () => Tooltips.hide());
+
+    // Inventory items in the selection panel
+    document.getElementById('paragon-selection-panel')?.addEventListener('mouseover', e => {
+      const row = e.target.closest('.selection-item-row');
+      if (!row) return;
+      const idx  = parseInt(row.dataset.inventoryIdx, 10);
+      const item = _inventory.slots[idx];
+      if (!item) return;
+      const def  = DATA.items[item.definitionId];
+      if (def) Tooltips.showItem(e, item, def);
+    });
+    document.getElementById('paragon-selection-panel')?.addEventListener('mouseleave', () => Tooltips.hide());
   },
 };

@@ -3,6 +3,7 @@
 import { DATA }                                              from './data/index.js';
 import { ItemType, ItemSubtype, Rarity, Currency, CURRENCY_CONFIG } from './enums.js';
 import { UI }                                                from './ui.js';
+import { Tooltips }                                          from './tooltips.js';
 import { getItemValue }                                      from './inventory.js';
 
 // ── Sort order constants ───────────────────────────────────────────────────
@@ -52,18 +53,6 @@ function _sortItems(a, b) {
   return ra - rb;
 }
 
-// ── Formatting helpers ─────────────────────────────────────────────────────
-
-function _capitalize(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-function _formatType(type, subtype) {
-  const typeLabel = type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-  if (!subtype) return typeLabel;
-  const subLabel = subtype.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-  return `${typeLabel} — ${subLabel}`;
-}
 
 // ── InventoryUI singleton ──────────────────────────────────────────────────
 
@@ -198,8 +187,8 @@ export const InventoryUI = {
       this._renderDetailBar();
     });
 
-    el.addEventListener('mouseenter', e => this._showItemTooltip(e, item, def));
-    el.addEventListener('mouseleave', () => UI.hideTooltip());
+el.addEventListener('mouseenter', e => Tooltips.showItem(e, item, def));
+      el.addEventListener('mouseleave', () => Tooltips.hide());
 
     return el;
   },
@@ -237,7 +226,7 @@ export const InventoryUI = {
     if (hint)  hint.style.display  = 'none';
     if (panel) panel.style.display = '';
 
-    if (nameEl) nameEl.textContent = `${def.name} · ${_capitalize(item.rarity)}`;
+    if (nameEl) nameEl.textContent = `${def.name} · ${(item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1))}`;
 
     if (btn) {
       btn.disabled = !def.canDestroy;
@@ -367,30 +356,5 @@ export const InventoryUI = {
 
   // ── Item tooltip ──────────────────────────────────────────────────────────
 
-  _showItemTooltip(e, item, def) {
-    const rarityLabel = _capitalize(item.rarity);
-    const typeLabel   = _formatType(def.type, def.subtype);
-    const iconHTML    = def.icon
-      ? `<img src="${def.icon}" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:4px">`
-      : `<span style="margin-right:4px">❓</span>`;
-
-    let html = `<strong>${iconHTML}${def.name}</strong>`;
-    html += `<div style="color:var(--text-dim);font-size:0.73rem;margin-top:2px">${typeLabel} · <span class="tt-rarity-${item.rarity}">${rarityLabel}</span></div>`;
-    html += `<div class="tt-divider"></div>`;
-    html += `<div>Base: <em>${item.baseAttribute.name}</em> +${item.baseAttribute.effectValue.toFixed(2)}</div>`;
-
-    if (item.slots.length > 0) {
-      item.slots.forEach(mod => {
-        const tag = `[${mod.modifierType.toUpperCase()}]`;
-        html += `<div style="color:var(--text-dim);font-size:0.78rem">${tag} ${mod.name} +${mod.effectValue.toFixed(2)}</div>`;
-      });
-    }
-
-    html += `<div class="tt-divider"></div>`;
-    html += `<div style="color:var(--text-dim);font-size:0.73rem">Value: ${def.value}`;
-    if (!def.canDestroy) html += ` · <span style="color:var(--text-gold)">Cannot be destroyed</span>`;
-    html += `</div>`;
-
-    UI.showRawTooltip(html, e);
-  },
+  _showItemTooltip(e, item, def) { Tooltips.showItem(e, item, def); },
 };
