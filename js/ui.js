@@ -323,33 +323,86 @@ export const UI = {
   },
 
   // ── Event track ────────────────────────────────────────────────────────
-  buildEventTrack(zone, currentEventIndex) {
+  // resolvedEvents: prog.resolvedEvents map (idx → resolved eventDef)
+  buildEventTrack(zone, currentEventIndex, resolvedEvents = {}) {
     const track = document.getElementById('event-track');
     if (!track) return;
     track.innerHTML = '';
 
-    zone.events.forEach((ev, i) => {
+    const typeIcons  = { fight: '⚔️', loot: '📦', elite: '★', boss: '☠️', rest_spot: '🕯️', random: '?' };
+    const typeLabels = { fight: 'FIGHT', loot: 'LOOT', elite: 'ELITE', boss: 'BOSS', rest_spot: 'REST', random: '???' };
+
+    zone.events.forEach((rawEv, i) => {
       if (i > 0) {
         const conn = document.createElement('div');
         conn.className = 'event-connector';
         track.appendChild(conn);
       }
 
-      const icons = { fight: '⚔️', loot: '📦', elite: '★', boss: '☠️' };
-      const labels = { fight: 'FIGHT', loot: 'LOOT', elite: 'ELITE', boss: 'BOSS' };
-
       const node = document.createElement('div');
-      node.className = `event-node ${ev.type}`;
-      if (i < currentEventIndex) node.classList.add('done');
-      else if (i === currentEventIndex) node.classList.add('active');
-      else node.classList.add('pending');
+      const isDone    = i < currentEventIndex;
+      const isCurrent = i === currentEventIndex;
+      const isFuture  = i > currentEventIndex;
 
-      node.innerHTML = `
-        <div class="event-node-icon">${icons[ev.type] || '?'}</div>
-        <span>${ev.label}</span>
-      `;
+      // Resolve the display event: use stored resolution for RANDOM nodes
+      // that have already been entered (done or current).
+      const resolved  = resolvedEvents[i];
+      const displayEv = (isDone || isCurrent) && resolved ? resolved : rawEv;
+
+      // REST_SPOT is always revealed, even in future position — it's a
+      // visible landmark on the path, not a hidden encounter.
+      const isRestSpot = rawEv.type === 'rest_spot';
+
+      if (isFuture && !isRestSpot) {
+        // ── Unknown future node ──────────────────────────────────────────
+        node.className = 'event-node unknown';
+        node.innerHTML = `
+          <div class="event-node-icon">?</div>
+          <span>???</span>
+        `;
+      } else {
+        // ── Revealed node (done, current, or rest spot) ──────────────────
+        node.className = `event-node ${displayEv.type}`;
+        if (isDone)    node.classList.add('done');
+        if (isCurrent) node.classList.add('active');
+        if (isFuture)  node.classList.add('pending'); // rest_spot future
+
+        const icon  = typeIcons[displayEv.type]  || '?';
+        const label = displayEv.label ?? typeLabels[displayEv.type] ?? displayEv.type;
+        node.innerHTML = `
+          <div class="event-node-icon">${icon}</div>
+          <span>${label}</span>
+        `;
+      }
+
       track.appendChild(node);
     });
+  },
+
+  // ── Rest spot scene ────────────────────────────────────────────────────
+  // Shows a modal over the battlefield with party portraits, HP, and lore.
+  showRestSpot(event, paragons) {
+    const portraitHtml = paragons.map(p => `
+      <div class="rest-portrait">
+        <img src="${p.def.portrait || ''}" alt="${p.def.name}"
+             onerror="this.style.display='none'">
+        <div class="rest-portrait-name">${p.def.name}</div>
+        <div class="rest-portrait-hp">${p.currentHP} / ${p.maxHP} HP</div>
+      </div>
+    `).join('');
+
+    const body = `
+      <div class="rest-scene-modal">
+        <div class="rest-portraits">${portraitHtml}</div>
+        ${event.loreText ? `<p class="rest-lore">${event.loreText}</p>` : ''}
+      </div>
+    `;
+
+    this.showModal(
+      `Rest Spot — ${event.label}`,
+      body,
+      [{ label: 'Continue', cls: '', action: () => { document.getElementById('btn-next')?.click(); } }]
+    );
   },
 
   // ── Log ────────────────────────────────────────────────────────────────
@@ -370,6 +423,17 @@ export const UI = {
   clearLog() {
     const scroll = document.getElementById('log-scroll');
     if (scroll) scroll.innerHTML = '';
+  },
+
+  // ── Reset battle area: clear stale actor cards + loot display ─────────
+  resetBattleArea() {
+    ['bf-player-back', 'bf-player-front', 'bf-enemy-front', 'bf-enemy-back'].forEach(id => {
+      const col = document.getElementById(id);
+      if (col) col.querySelectorAll('.actor-card').forEach(c => c.remove());
+    });
+    this._cards.clear();
+    const loot = document.getElementById('loot-display');
+    if (loot) loot.innerHTML = '';
   },
 
   // ── Result banner ──────────────────────────────────────────────────────

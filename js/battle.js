@@ -6,7 +6,7 @@ import { EquippedItems }  from './inventory.js';
 import { equipActorItems } from './loot.js';
 import { computeActorStats } from './stats.js';
 
-const TICK = 0.5; // seconds per tick
+const TICK = 0.1; // seconds per tick
 
 export class ActorRuntime {
   constructor(def) {
@@ -164,11 +164,12 @@ export class BattleEngine {
 
   // ── Build actors ───────────────────────────────────────────────────────
   // deployConfig: Array of {
-  //   actorId:      string,
-  //   row:          'front'|'back',
-  //   slotIndex:    number,
-  //   abilityIds:   string[],  // non-null ability ids from both skill panels
+  //   actorId:       string,
+  //   row:           'front'|'back',
+  //   slotIndex:     number,
+  //   abilityIds:    string[],       // non-null ability ids from both skill panels
   //   equippedItems: EquippedItems,
+  //   startingHP:    number|null,    // if set, overrides full HP (HP persistence between events)
   // }
   init(deployConfig, eventDef, locationMods = []) {
     this.locationMods = locationMods;
@@ -198,6 +199,10 @@ export class BattleEngine {
       // Use pre-built EquippedItems from paragon state (already deserialized).
       actor.equippedItems = cfg.equippedItems ?? actor.equippedItems;
       computeActorStats(actor);
+      // Apply persisted HP from previous event if provided (HP does not regen between combats).
+      if (cfg.startingHP != null) {
+        actor.currentHP = Math.min(actor.maxHP, Math.max(0, cfg.startingHP));
+      }
       return actor;
     });
     this.enemies  = [];
@@ -344,7 +349,11 @@ export class BattleEngine {
         if (entry.tickAccum >= def.tickInterval) {
           entry.tickAccum -= def.tickInterval;
           const effect = def.tickEffect(actor, entry.stacks);
-          if (effect) this._applyEffect(actor, effect, `${def.label}`);
+          if (effect) {
+            // Ensure tick effects target the actor the status is applied to.
+            if (!effect.target) effect.target = actor;
+            this._applyEffect(actor, effect, `${def.label}`);
+          }
         }
       }
     }
@@ -442,7 +451,7 @@ export class BattleEngine {
         // True damage: no mitigation, no armor
         if (dtype === 'true') {
           target.currentHP -= raw;
-          this.log(`<span class="actor-name">${target.name}</span> takes <span class="val">${raw}</span> true damage.`, 'damage');
+          this.log(`<span class="actor-name">${target.name}</span> takes <span class="val">${raw}</span> true damage${sourceName ? ` from <span class="ability-name">${sourceName}</span>` : ''}.`, 'damage');
           UI.floatText(target, `-${raw}`, 'damage');
           // Threat gain on damage taken
           this._addThreat(target, raw);
@@ -468,7 +477,7 @@ export class BattleEngine {
           const totalShown = armorDmg + hpDmg;
           if (totalShown > 0) {
             const logType = dtype === 'fire' ? 'damage' : 'damage';
-            this.log(`<span class="actor-name">${target.name}</span> takes <span class="val">${effective}</span> ${dtype} damage${armorDmg > 0 ? ` (${armorDmg} to armor)` : ''}.`, logType);
+            this.log(`<span class="actor-name">${target.name}</span> takes <span class="val">${effective}</span> ${dtype} damage${armorDmg > 0 ? ` (${armorDmg} to armor)` : ''}${sourceName ? ` from <span class="ability-name">${sourceName}</span>` : ''}.`, logType);
             UI.floatText(target, `-${effective}`, 'damage');
           }
         }
@@ -604,32 +613,36 @@ export class BattleEngine {
   }
 
   // ── Target resolution ──────────────────────────────────────────────────
+  // Targeting strings are absolute (from the game-designer's perspective):
+  //   single_player_* / all_player_* → always target paragons
+  //   single_enemy_*  / all_enemies   → always target enemies
+  //   all_allies → targets caster's own side
   _resolveTargets(caster, targeting) {
-    const isParagon = caster.subtype === 'paragon';
-    const enemyList = isParagon ? this.enemies.filter(e => !e.isDead) : this.paragons.filter(p => !p.isDead);
-    const allyList  = isParagon ? this.paragons.filter(p => !p.isDead) : this.enemies.filter(e => !e.isDead);
-
-    const frontEnemies = enemyList.filter(e => e.row === 'front');
-    const backEnemies  = enemyList.filter(e => e.row === 'back');
-    const frontAllies  = allyList.filter(a => a.row === 'front');
+    const aliveParagons = this.paragons.filter(p => !p.isDead);
+    const aliveEnemies  = this.enemies.filter(e => !e.isDead);
+    const frontParagons = aliveParagons.filter(p => p.row === 'front');
+    const frontEnemies  = aliveEnemies.filter(e => e.row === 'front');
 
     switch (targeting) {
       case 'self':                return [caster];
-      case 'single_enemy_front':  return frontEnemies.length > 0 ? [frontEnemies[0]] : [enemyList[0]].filter(Boolean);
-      case 'single_enemy_any':    return enemyList.length > 0 ? [this._lowestHP(enemyList)] : [];
-      case 'single_player_front': return frontAllies.length > 0 ? [frontAllies[0]] : [allyList[0]].filter(Boolean);
-      case 'single_player_any':   return allyList.length > 0 ? [this._lowestHP(allyList)] : [];
-      case 'all_enemies':         return enemyList;
-      case 'all_players':         return allyList;
-      case 'all_allies':          return allyList;
-      case 'all_player_front':    return frontAllies;
+      case 'single_enemy_front':  return frontEnemies.length > 0  ? [frontEnemies[0]]               : [aliveEnemies[0]].filter(Boolean);
+      case 'single_enemy_any':    return aliveEnemies.length > 0  ? [this._lowestHP(aliveEnemies)]   : [];
+      case 'single_player_front': return frontParagons.length > 0 ? [frontParagons[0]]               : [aliveParagons[0]].filter(Boolean);
+      case 'single_player_any':   return aliveParagons.length > 0 ? [this._lowestHP(aliveParagons)]  : [];
+      case 'all_enemies':         return aliveEnemies;
+      case 'all_players':         return aliveParagons;
+      case 'all_allies':          return caster.subtype === 'paragon' ? aliveParagons : aliveEnemies;
+      case 'all_player_front':    return frontParagons;
       case 'single_enemy_with_splash': {
-        const primary = frontEnemies.length > 0 ? frontEnemies[0] : enemyList[0];
+        const primary = frontEnemies.length > 0 ? frontEnemies[0] : aliveEnemies[0];
         if (!primary) return [];
-        const adjacent = enemyList.find(e => e !== primary);
+        const adjacent = aliveEnemies.find(e => e !== primary);
         return adjacent ? [primary, adjacent] : [primary];
       }
-      default: return enemyList.slice(0, 1);
+      default: {
+        const opp = caster.subtype === 'paragon' ? aliveEnemies : aliveParagons;
+        return opp.slice(0, 1);
+      }
     }
   }
 
@@ -686,6 +699,9 @@ export class BattleEngine {
     } else {
       this.log('Defeat. The Paragons have fallen.', 'system');
     }
+
+    // Strip regen from all paragons — regen must not persist after combat ends.
+    this.paragons.forEach(p => p.removeStatus('regen'));
 
     this.onBattleEnd(result);
   }

@@ -10,6 +10,7 @@ import { collectBattleLoot, collectContainerLoot } from './loot.js';
 import { EventType }         from './enums.js';
 import { Cinematic }         from './cinematic.js';
 import { ParagonUI }         from './paragon-ui.js';
+import { checkRequirements } from './requirements.js';
 
 const Game = {
 
@@ -79,19 +80,43 @@ const Game = {
     document.getElementById('btn-restart').addEventListener('click',    () => this._onRestartZone());
     document.getElementById('btn-next').addEventListener('click',       () => this._onNextEvent());
     document.getElementById('btn-wipe').addEventListener('click',       () => this._onWipe());
+    document.getElementById('btn-pause').addEventListener('click',      () => this._onTogglePause());
     document.getElementById('modal-overlay').addEventListener('click', e => {
       if (e.target === document.getElementById('modal-overlay') && !Cinematic.isPlaying) UI.closeModal();
     });
 
-    document.querySelectorAll('.speed-btn').forEach(btn => {
+    document.querySelectorAll('.speed-btn:not(#btn-pause)').forEach(btn => {
       btn.addEventListener('click', () => {
         if (Cinematic.isPlaying) return;
-        document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.speed-btn:not(#btn-pause)').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         this.speedMult = parseFloat(btn.dataset.speed);
-        if (this.engine) this.engine.setSpeed(this.speedMult);
+        if (this.engine) {
+          this.engine.setSpeed(this.speedMult);
+          // Selecting a speed resumes the engine if it was paused.
+          if (!this.engine.active && !this.engine.ended) {
+            this.engine.resume();
+            document.getElementById('btn-pause')?.classList.remove('active');
+            UI.setStatus('Battle in progress...', 'active');
+          }
+        }
       });
     });
+  },
+
+  // ── Pause / resume toggle ──────────────────────────────────────
+  _onTogglePause() {
+    if (!this.engine || this.engine.ended) return;
+    const btn = document.getElementById('btn-pause');
+    if (this.engine.active) {
+      this.engine.pause();
+      btn?.classList.add('active');
+      UI.setStatus('Paused.', '');
+    } else {
+      this.engine.resume();
+      btn?.classList.remove('active');
+      UI.setStatus('Battle in progress...', 'active');
+    }
   },
 
   // ── Enter battle view for the selected location ────────────────────────
@@ -103,6 +128,8 @@ const Game = {
 
     this.activeLocation = loc;
     UI.showBattleView();
+    UI.resetBattleArea();
+    UI.clearLog();
     this._buildBattleStaticUI();
     this._applyEventToUI();
     UI.setStatus('Ready — deploy your Paragons.', '');
@@ -110,41 +137,31 @@ const Game = {
 
   // ── Return to location map ─────────────────────────────────────────────
   _onBackToMap() {
-    const doReturn = () => {
-      if (this._defeatReturnTimer) { clearTimeout(this._defeatReturnTimer); this._defeatReturnTimer = null; }
-      if (this.engine) { this.engine.stop(); this.engine = null; }
-      this.activeLocation = null;
-      this.state.selectedLocationId = null;
-      this._save();
-      UI.clearLog();
-      UI.showLocationSelect();
-      UI.renderLocationSelect(DATA.locations, this.state.locationProgress, locId => {
-        this.state.selectedLocationId = locId;
-      });
-      UI.resetLocationSidebar();
-    };
-
-    if (this.engine && this.engine.active) {
-      UI.showModal(
-        'Withdraw Forces',
-        'Your paragons retreat. Progress on this encounter is preserved — you may return and continue.',
-        [
-          { label: 'Withdraw', cls: 'btn-danger', action: doReturn },
-          { label: 'Hold',     cls: '',            action: null }
-        ]
-      );
-    } else {
-      doReturn();
-    }
+    UI.showModal(
+      'Retreat',
+      'Your forces pull back. All progress on this encounter will be lost.',
+      [
+        { label: 'Retreat', cls: 'btn-danger', action: () => this._returnToMap() },
+        { label: 'Hold',    cls: '',           action: null }
+      ]
+    );
   },
 
   // ── Per-location progress helper ───────────────────────────────────────
   _getLocProgress() {
     const id = this.activeLocation.id;
     if (!this.state.locationProgress[id]) {
-      this.state.locationProgress[id] = { currentEventIndex: 0, completedEvents: [], zoneConquered: false };
+      this.state.locationProgress[id] = {
+        currentEventIndex: 0, completedEvents: [], zoneConquered: false,
+        paragonHP: {}, resolvedEvents: {}, randomEventCounts: {},
+      };
     }
-    return this.state.locationProgress[id];
+    // Ensure new fields exist on saves migrated from older versions.
+    const p = this.state.locationProgress[id];
+    if (!p.paragonHP)         p.paragonHP         = {};
+    if (!p.resolvedEvents)    p.resolvedEvents    = {};
+    if (!p.randomEventCounts) p.randomEventCounts = {};
+    return p;
   },
 
   // ── Build static header for the battle view ────────────────────────────
@@ -155,17 +172,17 @@ const Game = {
     const desc = document.getElementById('area-desc');
     if (area) area.textContent = loc.name;
     if (desc) desc.textContent = loc.description;
-    UI.buildEventTrack(loc, prog.currentEventIndex);
+    UI.buildEventTrack(loc, prog.currentEventIndex, prog.resolvedEvents ?? {});
     this._refreshStats();
   },
 
   // ── Apply current event state to battle UI ─────────────────────────────
   _applyEventToUI() {
-    const prog = this._getLocProgress();
-    const idx  = prog.currentEventIndex;
-    const ev   = this.activeLocation.events[idx];
+    const prog  = this._getLocProgress();
+    const idx   = prog.currentEventIndex;
+    const rawEv = this.activeLocation.events[idx];
 
-    UI.buildEventTrack(this.activeLocation, idx);
+    UI.buildEventTrack(this.activeLocation, idx, prog.resolvedEvents ?? {});
 
     const startBtn   = document.getElementById('btn-start');
     const nextBtn    = document.getElementById('btn-next');
@@ -183,23 +200,65 @@ const Game = {
     nextBtn.disabled    = true;
     restartBtn.disabled = (idx === 0);
 
+    // ── Resolve RANDOM nodes on first entry ────────────────────────────
+    if (rawEv.type === EventType.RANDOM && !prog.resolvedEvents[idx]) {
+      const resolved = this._resolveRandomEvent(idx);
+      if (!resolved) {
+        UI.log('(No events available for this node — advancing.)', 'system');
+        setTimeout(() => this._onNextEvent(), 600);
+        return;
+      }      // Re-render track now that the current node is resolved.
+      UI.buildEventTrack(this.activeLocation, idx, prog.resolvedEvents ?? {});    }
+
+    // ── Requirements check on fixed events ────────────────────────────
+    const ctx = { inventory: this.inventory, state: this.state };
+    if (rawEv.type !== EventType.RANDOM && rawEv.requirements) {
+      if (!checkRequirements(rawEv.requirements, ctx)) {
+        startBtn.disabled = true;
+        UI.setStatus('Encounter locked — requirements not met. Advancing...', 'system');
+        UI.log('An encounter was skipped — requirements not met.', 'system');
+        setTimeout(() => this._onNextEvent(), 800);
+        return;
+      }
+    }
+
+    // ── Effective event def (resolved if RANDOM, raw otherwise) ────────
+    const ev = rawEv.type === EventType.RANDOM ? prog.resolvedEvents[idx] : rawEv;
+
+    // ── REST_SPOT ──────────────────────────────────────────────────────
+    if (ev.type === EventType.REST_SPOT) {
+      startBtn.disabled = true;
+      this._clearBattleArea();
+      if (prog.completedEvents.includes(idx)) {
+        nextBtn.disabled = false;
+        UI.setStatus(`Rest Spot — ${ev.label} (already visited)`, '');
+      } else {
+        nextBtn.disabled = true;
+        UI.setStatus(`Rest Spot — ${ev.label}`, '');
+        this._onRestSpotEvent(ev);
+      }
+      return;
+    }
+
+    // ── LOOT ──────────────────────────────────────────────────────────
     if (ev.type === EventType.LOOT) {
       startBtn.disabled = true;
       nextBtn.disabled  = true;
       UI.setStatus(`Container — ${ev.label}`, '');
       this._clearBattleArea();
-      // If already looted (e.g. page reload mid-zone) just re-enable Next.
       if (prog.completedEvents.includes(idx)) {
         nextBtn.disabled = false;
         UI.setStatus(`Container — ${ev.label} (already looted)`, '');
       } else {
         this._onLootEvent(ev);
       }
-    } else {
-      startBtn.disabled = false;
-      UI.setStatus(`${ev.type.toUpperCase()} — ${ev.label}. Deploy and engage.`, '');
-      this._clearBattleArea();
+      return;
     }
+
+    // ── Combat events (FIGHT / ELITE / BOSS) ──────────────────────────
+    startBtn.disabled = false;
+    UI.setStatus(`${ev.type.toUpperCase()} — ${ev.label ?? ev.type}. Deploy and engage.`, '');
+    this._clearBattleArea();
   },
 
   // ── Show loot event ────────────────────────────────────────────────────
@@ -240,10 +299,17 @@ const Game = {
 
   // ── Start battle ───────────────────────────────────────────────────────
   async _onStartBattle() {
-    const prog = this._getLocProgress();
-    const idx  = prog.currentEventIndex;
-    const ev   = this.activeLocation.events[idx];
-    if (!ev || ev.type === EventType.LOOT) return;
+    const prog  = this._getLocProgress();
+    const idx   = prog.currentEventIndex;
+    const rawEv = this.activeLocation.events[idx];
+    if (!rawEv) return;
+
+    // Use resolved event for RANDOM nodes.
+    const ev = rawEv.type === EventType.RANDOM
+      ? prog.resolvedEvents?.[idx]
+      : rawEv;
+
+    if (!ev || ev.type === EventType.LOOT || ev.type === EventType.REST_SPOT) return;
 
     if (this.engine) { this.engine.stop(); this.engine = null; }
 
@@ -275,6 +341,7 @@ const Game = {
         slotIndex:    entry.index,
         abilityIds,
         equippedItems: equipped,
+        startingHP:   prog.paragonHP?.[entry.paragonId] ?? null,
       };
     });
 
@@ -287,6 +354,7 @@ const Game = {
             DATA.actors[id]?.abilities ?? []
           ).map(a => a.abilityId),
           equippedItems: new EquippedItems(),
+          startingHP:   prog.paragonHP?.[id] ?? null,
         }));
 
     this.engine.init(config, ev, this.activeLocation.combatMods ?? []);
@@ -298,6 +366,7 @@ const Game = {
 
     document.getElementById('btn-start').disabled = true;
     document.getElementById('btn-next').disabled  = true;
+    document.getElementById('btn-pause')?.classList.remove('active');
 
     this.state.runCount++;
     this._save();
@@ -317,9 +386,19 @@ const Game = {
   _onBattleEnd(result) {
     const prog = this._getLocProgress();
 
+    document.getElementById('btn-pause')?.classList.remove('active');
+
     if (result === 'victory') {
       this.state.victories++;
       prog.completedEvents.push(prog.currentEventIndex);
+
+      // Persist surviving paragon HP — carries into the next combat event.
+      // Dead paragons are removed so they start fresh (full HP) next fight.
+      if (!prog.paragonHP) prog.paragonHP = {};
+      this.engine.paragons.forEach(p => {
+        if (!p.isDead) prog.paragonHP[p.defId] = p.currentHP;
+        else           delete prog.paragonHP[p.defId];
+      });
 
       const defeatedEnemies = this.engine.enemies;
       const { added, overflowed } = collectBattleLoot(
@@ -342,6 +421,7 @@ const Game = {
     } else {
       UI.setStatus('Defeat. Your forces are routed.', 'defeat');
       this.state.defeats++;
+      this._onLocationExit(this.activeLocation.id, 'defeat');
       prog.currentEventIndex = 0;
       prog.completedEvents   = [];
       UI.log('Defeat. The survivors retreat to the castle.', 'system');
@@ -363,6 +443,17 @@ const Game = {
   _returnToMap() {
     if (this._defeatReturnTimer) { clearTimeout(this._defeatReturnTimer); this._defeatReturnTimer = null; }
     if (this.engine) { this.engine.stop(); this.engine = null; }
+    document.getElementById('btn-pause')?.classList.remove('active');
+    if (this.activeLocation) {
+      const locId = this.activeLocation.id;
+      this._onLocationExit(locId, 'defeat');
+      const prog = this.state.locationProgress?.[locId];
+      if (prog) {
+        prog.currentEventIndex = 0;
+        prog.completedEvents   = [];
+        prog.zoneConquered     = false;
+      }
+    }
     this.activeLocation = null;
     this.state.selectedLocationId = null;
     this._save();
@@ -408,7 +499,9 @@ const Game = {
 
   _doRestart() {
     if (this.engine) { this.engine.stop(); this.engine = null; }
+    document.getElementById('btn-pause')?.classList.remove('active');
     const prog = this._getLocProgress();
+    this._onLocationExit(this.activeLocation.id, 'restart');
     prog.currentEventIndex = 0;
     prog.completedEvents   = [];
     prog.zoneConquered     = false;
@@ -419,6 +512,156 @@ const Game = {
     document.getElementById('btn-start').disabled   = false;
     document.getElementById('btn-next').disabled    = true;
     document.getElementById('btn-restart').disabled = true;
+  },
+
+  // ── Location exit — wipes per-run state; hook point for cinematics ────
+  // reason: 'defeat' | 'voluntary' | 'restart'
+  // Called on defeat in _onBattleEnd, on map exit in _returnToMap,
+  // and on restart in _doRestart. Safe to call multiple times (idempotent).
+  _onLocationExit(locId, reason) {  // eslint-disable-line no-unused-vars
+    const prog = this.state.locationProgress?.[locId];
+    if (!prog) return;
+    prog.paragonHP         = {};
+    prog.resolvedEvents    = {};
+    prog.randomEventCounts = {};
+    // Future: trigger defeat/exit cinematic keyed on reason + locId
+    // e.g. if (reason === 'defeat') await Cinematic.play(`${locId}_defeat`);
+  },
+
+  // ── Resolve a RANDOM event node at the given index ────────────────────
+  _resolveRandomEvent(idx) {
+    const loc  = this.activeLocation;
+    const prog = this._getLocProgress();
+    const ctx  = { inventory: this.inventory, state: this.state };
+
+    // Filter table by requirements and per-run cap.
+    const available = (loc.randomEventTable || []).filter(entry => {
+      if (entry.requirements && !checkRequirements(entry.requirements, ctx)) return false;
+      if (entry.maxPerRun != null) {
+        const used = prog.randomEventCounts?.[entry.type] || 0;
+        if (used >= entry.maxPerRun) return false;
+      }
+      return true;
+    });
+    if (available.length === 0) return null;
+
+    // Weighted random pick.
+    const totalWeight = available.reduce((s, e) => s + e.weight, 0);
+    let roll   = Math.random() * totalWeight;
+    let chosen = available[available.length - 1];
+    for (const entry of available) {
+      roll -= entry.weight;
+      if (roll <= 0) { chosen = entry; break; }
+    }
+
+    // Build the resolved event definition.
+    let resolved;
+    if (chosen.type === EventType.FIGHT || chosen.type === EventType.ELITE) {
+      const comp      = chosen.composition || { front: { min: 1, max: 2 }, back: { min: 0, max: 1 } };
+      const frontPool = (loc.enemyPool || []).filter(e => e.preferredRow === 'front');
+      const backPool  = (loc.enemyPool || []).filter(e => e.preferredRow === 'back');
+      const frontCount = comp.front.min + Math.floor(Math.random() * (comp.front.max - comp.front.min + 1));
+      const backCount  = comp.back.min  + Math.floor(Math.random() * (comp.back.max  - comp.back.min  + 1));
+      const frontIds   = this._samplePool(frontPool.length > 0 ? frontPool : loc.enemyPool, frontCount);
+      const backIds    = this._samplePool(backPool.length  > 0 ? backPool  : [],            backCount);
+      resolved = {
+        type:      chosen.type,
+        label:     chosen.type === EventType.ELITE ? 'Wanderer' : 'Skirmish',
+        enemies:   [...frontIds, ...backIds],
+        enemyRows: { front: frontIds, back: backIds },
+      };
+    } else if (chosen.type === EventType.LOOT) {
+      resolved = {
+        type:        EventType.LOOT,
+        label:       'Salvage',
+        loot:        chosen.loot        || [],
+        cinematicId: chosen.cinematicId || null,
+      };
+    } else {
+      resolved = { type: chosen.type, label: String(chosen.type) };
+    }
+
+    if (!prog.resolvedEvents)    prog.resolvedEvents    = {};
+    if (!prog.randomEventCounts) prog.randomEventCounts = {};
+    prog.resolvedEvents[idx] = resolved;
+    prog.randomEventCounts[chosen.type] = (prog.randomEventCounts[chosen.type] || 0) + 1;
+    this._save();
+    return resolved;
+  },
+
+  // ── Weighted sample without replacement from an actor pool entry list ─
+  _samplePool(pool, count) {
+    if (!pool || pool.length === 0 || count <= 0) return [];
+    const results   = [];
+    const remaining = [...pool];
+    const n = Math.min(count, remaining.length);
+    for (let i = 0; i < n; i++) {
+      const total = remaining.reduce((s, e) => s + e.weight, 0);
+      let roll   = Math.random() * total;
+      let chosen = remaining.length - 1;
+      for (let j = 0; j < remaining.length; j++) {
+        roll -= remaining[j].weight;
+        if (roll <= 0) { chosen = j; break; }
+      }
+      results.push(remaining[chosen].actorId);
+      remaining.splice(chosen, 1);
+    }
+    return results;
+  },
+
+  // ── Handle rest spot — apply HP healing, show rest scene ──────────────
+  _onRestSpotEvent(ev) {
+    const prog = this._getLocProgress();
+    if (!prog.paragonHP) prog.paragonHP = {};
+
+    // Determine deployed paragons (battlefield config or fallback).
+    const deployed = this.state.battlefield?.length > 0
+      ? this.state.battlefield
+      : this.state.unlockedParagonIds.slice(0, 2).map((id, i) => ({ paragonId: id, row: i === 0 ? 'front' : 'back' }));
+
+    const healedParagons = [];
+    for (const entry of deployed) {
+      const def   = DATA.actors[entry.paragonId];
+      if (!def) continue;
+      const maxHP  = def.baseHP;
+      const before = prog.paragonHP[entry.paragonId] ?? maxHP;
+      const healed = Math.min(maxHP, Math.round(before + maxHP * (ev.healPercent ?? 0.3)));
+      const gained = healed - before;
+      prog.paragonHP[entry.paragonId] = healed;
+      healedParagons.push({ id: entry.paragonId, def, currentHP: healed, maxHP, gained });
+    }
+
+    prog.completedEvents.push(prog.currentEventIndex);
+    this._save();
+
+    // Log healing to the battle chronicle.
+    for (const p of healedParagons) {
+      if (p.gained > 0) {
+        UI.log(`<span class="actor-name">${p.def.name}</span> recovers <span class="val">${p.gained}</span> HP at the rest spot.`, 'heal');
+      } else {
+        UI.log(`<span class="actor-name">${p.def.name}</span> is already at full HP.`, 'heal');
+      }
+    }
+
+    document.getElementById('btn-next').disabled = false;
+
+    // Sync healed HP back into any live actor cards from the previous battle.
+    if (this.engine) {
+      this.engine.paragons.forEach(p => {
+        const hp = prog.paragonHP[p.defId];
+        if (hp != null) p.currentHP = hp;
+      });
+      UI.updateAll(this.engine);
+    }
+
+    UI.showRestSpot(ev, healedParagons);
+  },
+
+  // ── Set a game progression flag ────────────────────────────────────────
+  setFlag(id, value) {
+    if (!this.state.gameFlags) this.state.gameFlags = {};
+    this.state.gameFlags[id] = value;
+    this._save();
   },
 
   // ── Wipe save ──────────────────────────────────────────────────────────

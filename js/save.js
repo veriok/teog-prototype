@@ -9,10 +9,13 @@ export const Save = {
   // ── Default state ──────────────────────────────────────────────────────
   _default() {
     return {
-      version: 4,
+      version: 5,
       selectedLocationId: null,
       locationProgress: {
-        flooded_cellars: { currentEventIndex: 0, completedEvents: [], zoneConquered: false }
+        flooded_cellars: {
+          currentEventIndex: 0, completedEvents: [], zoneConquered: false,
+          paragonHP: {}, resolvedEvents: {}, randomEventCounts: {},
+        }
       },
       runCount: 0,
       victories: 0,
@@ -27,6 +30,8 @@ export const Save = {
       paragonStates:      {},      // keyed by paragonId; initialized lazily in ParagonUI
       battlefield:        [],      // { row, index, paragonId }[]
       inventoryItems:     [],      // serialized ItemInstance[]
+      // v5 — Progression flags
+      gameFlags:          {},      // key:value store for story/progression state
     };
   },
 
@@ -62,6 +67,17 @@ export const Save = {
         parsed.battlefield        = [];
         parsed.inventoryItems     = [];
         parsed.version = 4;
+      }
+      // Migrate v4 → v5 (add gameFlags + per-location HP/event state)
+      if (parsed.version < 5) {
+        parsed.gameFlags = {};
+        for (const id of Object.keys(parsed.locationProgress || {})) {
+          const p = parsed.locationProgress[id];
+          p.paragonHP         = p.paragonHP         || {};
+          p.resolvedEvents    = p.resolvedEvents    || {};
+          p.randomEventCounts = p.randomEventCounts || {};
+        }
+        parsed.version = 5;
       }
       return Object.assign(this._default(), parsed);
     } catch (e) {

@@ -104,10 +104,12 @@ export const MAX_DEPLOYED_PARAGONS = 2;
 
 // ── Event types ─────────────────────────────────────────────────────────
 export const EventType = Object.freeze({
-  FIGHT: 'fight',
-  ELITE: 'elite',
-  BOSS:  'boss',
-  LOOT:  'loot',
+  FIGHT:     'fight',
+  ELITE:     'elite',
+  BOSS:      'boss',
+  LOOT:      'loot',
+  RANDOM:    'random',    // resolved at runtime from location's randomEventTable
+  REST_SPOT: 'rest_spot', // party recovery node; no combat
 });
 
 // ── Item sell-value multipliers by rarity ───────────────────────────────────

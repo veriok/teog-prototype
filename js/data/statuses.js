@@ -59,4 +59,13 @@ export const statuses = {
     armorReductionPerStack: 15,
     tooltip: 'Reduces effective Armor by 15 per stack.'
   },
+  regen: {
+    id: 'regen', label: 'Regen', icon: '💚',
+    cssClass: 'status-regen',
+    stackMode: 'stack', maxStacks: 5,
+    tickInterval: 1.0,
+    // target must be set explicitly so _applyEffect can resolve it
+    tickEffect: (actor, stacks) => ({ type: 'heal', target: actor, amount: stacks * 4, source: 'Regeneration' }),
+    tooltip: 'Restores 4 HP per stack each second. Stripped immediately when combat ends.',
+  },
 };

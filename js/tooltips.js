@@ -74,6 +74,10 @@ export const Tooltips = {
       : '';
 
     let html = `<strong>${abilityDef.icon ?? ''} ${abilityDef.name}</strong>`;
+    if ((abilityDef.tags ?? []).length > 0) {
+      const pills = abilityDef.tags.map(t => `<span class="tag-pill">${t[0].toUpperCase() + t.slice(1)}</span>`).join('');
+      html += `<div class="tt-tags">${pills}</div>`;
+    }
     html += `<div class="tt-cd">CD: ${rank.cooldown}s</div>`;
     if (rank.cost)         html += `<div class="tt-res">Cost: ${rank.cost.amount} ${rank.cost.type}</div>`;
     if (rank.damage)       html += `<div class="tt-dmg">Damage: ${rank.damage}${dtype}</div>`;

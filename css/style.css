@@ -213,10 +213,18 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 3px;
+  width: 64px;
   font-family: var(--font-heading);
   font-size: 0.58rem;
   letter-spacing: 0.1em;
   color: var(--text-dim);
+}
+
+.event-node span {
+  width: 100%;
+  text-align: center;
+  word-break: break-word;
+  line-height: 1.3;
 }
 
 .event-node-icon {
@@ -236,6 +244,72 @@ body {
 .event-node.pending .event-node-icon { border-color: var(--border-dim); color: #3a3040; }
 .event-node.boss .event-node-icon   { border-color: var(--border-red); }
 .event-node.active.boss .event-node-icon { border-color: var(--text-red); background: rgba(90,21,21,0.2); color: var(--text-red); box-shadow: 0 0 10px var(--glow-red); }
+
+/* Unknown future nodes */
+.event-node.unknown .event-node-icon {
+  border-color: #2a2530;
+  background: #111018;
+  color: #2e2a38;
+  font-size: 1rem;
+}
+.event-node.unknown span { color: #2e2a38; }
+
+/* Rest spot — warm amber tone */
+.event-node.rest_spot .event-node-icon { border-color: #7a5c28; color: #c8933a; }
+.event-node.active.rest_spot .event-node-icon {
+  border-color: #c8933a;
+  background: rgba(120,80,20,0.2);
+  color: #e8b84a;
+  box-shadow: 0 0 10px rgba(200,147,58,0.4);
+}
+
+/* ── Rest spot scene (modal) ─────────────────────────────────────────────── */
+.rest-scene-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 8px 0 4px;
+}
+.rest-portraits {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+}
+.rest-portrait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.rest-portrait img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border: 1px solid var(--border-gold);
+  filter: sepia(0.2);
+}
+.rest-portrait-name {
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: var(--text-gold);
+}
+.rest-portrait-hp {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  color: #6ab070;
+}
+.rest-lore {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-parchment);
+  text-align: center;
+  max-width: 400px;
+  line-height: 1.6;
+  font-style: italic;
+  opacity: 0.85;
+}
 
 .event-connector {
   width: 16px;
@@ -895,6 +969,7 @@ body {
 .tooltip .tt-cd  { color: var(--text-blue); }
 .tooltip .tt-dmg { color: var(--text-red); }
 .tooltip .tt-res { color: var(--resource-energy); }
+.tooltip .tt-tags { display: flex; flex-wrap: wrap; gap: 3px; margin: 2px 0 4px; }
 
 /* ── Floating damage text ────────────────────────────────────────────────── */
 .float-text {
@@ -2398,6 +2473,7 @@ body {
   font-size: 0.78rem;
   color: var(--text-dim);
   font-style: italic;
+  white-space: nowrap;
 }
 
 /* Ability candidate rows (reused in selection panel) */
