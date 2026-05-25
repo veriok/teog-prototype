@@ -86,7 +86,7 @@ export const UI = {
         <div class="card-info">
           <div class="card-name">${actor.name}</div>
           <div class="card-role">${tagLine}</div>
-          <div class="card-level">${actor.subtype === 'paragon' ? 'Paragon' : (actor.subclass === 'boss' ? '☠ BOSS' : actor.subclass === 'elite' ? '★ ELITE' : `Lv.${actor.level}`)}</div>
+          <div class="card-level">${actor.subtype === 'paragon' ? 'Paragon' : (actor.subclass === 'boss' ? `☠ BOSS &middot; Lv.${actor.level}` : actor.subclass === 'elite' ? `★ ELITE &middot; Lv.${actor.level}` : `Lv.${actor.level}`)}</div>
         </div>
       </div>
       <div class="card-bars">
@@ -151,7 +151,7 @@ export const UI = {
       el.className = 'ability-icon on-cd';
       el.dataset.abilityId = ab.id;
       el.innerHTML = `${ab.icon}<div class="cd-overlay" style="height:100%"></div>`;
-      el.addEventListener('mouseenter', e => Tooltips.showAbility(e, ab, ab.currentRank - 1));
+      el.addEventListener('mouseenter', e => Tooltips.showAbility(e, DATA.abilities[ab.id], ab.currentRank - 1));
       el.addEventListener('mouseleave', () => Tooltips.hide());
       container.appendChild(el);
     });

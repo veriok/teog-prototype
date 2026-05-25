@@ -67,6 +67,34 @@ export function computeActorStats(actor) {
   actor.stats        = s;
 }
 
+// ── getRankForLevel ─────────────────────────────────────────────────────────
+// Returns the highest rank definition in abilityDef whose levelRequired is
+// less than or equal to `level`. Falls back to ranks[0] if none qualify.
+// Used at spawn time to select the correct rank for an actor's effective level.
+
+export function getRankForLevel(abilityDef, level) {
+  const eligible = abilityDef.ranks.filter(r => (r.levelRequired ?? 1) <= level);
+  return eligible.length ? eligible[eligible.length - 1] : abilityDef.ranks[0];
+}
+
+// ── scaleActorByLevel ───────────────────────────────────────────────────────
+// Applies a +5% per level above 1 multiplier to an actor's HP and armor.
+// Must be called AFTER computeActorStats() so equipment bonuses are included.
+// No-op at level 1.
+
+export function scaleActorByLevel(actor, level) {
+  if (level <= 1) return;
+  const mult = 1 + (level - 1) * 0.05;
+  actor.maxHP        = Math.round(actor.maxHP    * mult);
+  actor.currentHP    = Math.round(actor.currentHP * mult);
+  actor.maxArmor     = Math.round(actor.maxArmor  * mult);
+  actor.currentArmor = Math.round(actor.currentArmor * mult);
+  if (actor.stats) {
+    actor.stats.hp    = actor.maxHP;
+    actor.stats.armor = actor.maxArmor;
+  }
+}
+
 // ── computeHitDamage ────────────────────────────────────────────────────────
 
 export function computeHitDamage(baseDmg, ctx) {

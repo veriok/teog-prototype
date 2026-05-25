@@ -39,7 +39,7 @@ export const actors = {
   drowned_soldier_1: {
     id: 'drowned_soldier_1', name: 'Drowned Soldier', role: 'Infantry', icon: '💀',
     portrait: 'assets/actors/drowned_soldier.png',
-    subtype: 'enemy', row: 'front', level: 2,
+    subtype: 'enemy', row: 'front',
     tags: ['undead', 'humanoid'],
     baseHP: 85, baseArmor: 40,
     resource: { type: 'threat', max: 100, current: 0 },
@@ -64,7 +64,7 @@ export const actors = {
   drowned_soldier_2: {
     id: 'drowned_soldier_2', name: 'Drowned Soldier', role: 'Infantry', icon: '💀',
     portrait: 'assets/actors/drowned_soldier.png',
-    subtype: 'enemy', row: 'front', level: 2,
+    subtype: 'enemy', row: 'front',
     tags: ['undead', 'humanoid'],
     baseHP: 85, baseArmor: 40,
     resource: { type: 'threat', max: 100, current: 0 },
@@ -89,7 +89,7 @@ export const actors = {
   siege_crossbowman: {
     id: 'siege_crossbowman', name: 'Siege Crossbowman', role: 'Ranged', icon: '🏹',
     portrait: 'assets/actors/siege_crossbowman.png',
-    subtype: 'enemy', row: 'back', level: 2,
+    subtype: 'enemy', row: 'back',
     tags: ['undead', 'humanoid'],
     baseHP: 55, baseArmor: 15,
     resource: { type: 'threat', max: 100, current: 0 },
@@ -115,7 +115,7 @@ export const actors = {
   siege_warden: {
     id: 'siege_warden', name: 'Siege Warden', role: 'Elite Guard', icon: '⚔️',
     portrait: 'assets/actors/siege_warden.png',
-    subtype: 'enemy', subclass: 'elite', row: 'front', level: 4,
+    subtype: 'enemy', subclass: 'elite', row: 'front', levelAdjustment: 1,
     tags: ['undead', 'humanoid'],
     baseHP: 180, baseArmor: 90,
     resource: { type: 'threat', max: 100, current: 0 },
@@ -143,7 +143,7 @@ export const actors = {
   drowned_sergeant: {
     id: 'drowned_sergeant', name: 'The Drowned Sergeant', role: 'Boss', icon: '☠️',
     portrait: 'assets/actors/drowned_sergeant.png',
-    subtype: 'enemy', subclass: 'boss', row: 'front', level: 6,
+    subtype: 'enemy', subclass: 'boss', row: 'front', levelAdjustment: 2,
     tags: ['undead', 'humanoid'],
     baseHP: 420, baseArmor: 120,
     resource: { type: 'threat', max: 100, current: 0 },

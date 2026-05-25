@@ -4,7 +4,7 @@ import { DATA }           from './data/index.js';
 import { UI }             from './ui.js';
 import { EquippedItems }  from './inventory.js';
 import { equipActorItems } from './loot.js';
-import { computeActorStats } from './stats.js';
+import { computeActorStats, getRankForLevel, scaleActorByLevel } from './stats.js';
 
 const TICK = 0.1; // seconds per tick
 
@@ -171,7 +171,7 @@ export class BattleEngine {
   //   equippedItems: EquippedItems,
   //   startingHP:    number|null,    // if set, overrides full HP (HP persistence between events)
   // }
-  init(deployConfig, eventDef, locationMods = []) {
+  init(deployConfig, eventDef, locationLevel = 1, locationMods = []) {
     this.locationMods = locationMods;
     this.paragons = deployConfig.map(cfg => {
       const def   = DATA.actors[cfg.actorId];
@@ -210,10 +210,31 @@ export class BattleEngine {
     const rows = eventDef.enemyRows;
     Object.entries(rows).forEach(([row, ids]) => {
       ids.forEach(id => {
-        const def = { ...DATA.actors[id], row };
+        const baseDef = DATA.actors[id];
+        const effectiveLevel = Math.max(1, locationLevel + (baseDef.levelAdjustment ?? 0));
+
+        const scaledAbilities = (baseDef.abilities ?? []).map(a => {
+          const abDef = DATA.abilities[a.abilityId];
+          if (!abDef) return a;
+          return { abilityId: a.abilityId, rank: getRankForLevel(abDef, effectiveLevel).rank };
+        });
+
+        const scaledPhase2 = (baseDef.phase2Abilities ?? []).map(a => {
+          const abDef = DATA.abilities[a.abilityId];
+          if (!abDef) return a;
+          return { abilityId: a.abilityId, rank: getRankForLevel(abDef, effectiveLevel).rank };
+        });
+
+        const def = {
+          ...baseDef, row,
+          abilities: scaledAbilities,
+          ...(baseDef.phase2Abilities ? { phase2Abilities: scaledPhase2 } : {}),
+        };
         const actor = new ActorRuntime(def);
-        equipActorItems(DATA.actors[id], actor);
+        actor.level = effectiveLevel;
+        equipActorItems(baseDef, actor);
         computeActorStats(actor);
+        scaleActorByLevel(actor, effectiveLevel);
         this.enemies.push(actor);
       });
     });

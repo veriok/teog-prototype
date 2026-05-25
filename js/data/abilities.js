@@ -9,9 +9,9 @@ export const abilities = {
     id: 'sword_slash', name: 'Sword Slash', icon: '⚔️',
     tree: SkillType.SWORD, tags: [AbilityTag.MELEE],
     ranks: [
-      { rank: 1, cooldown: 2.5, cost: null, damage: 18, damageType: 'physical' },
-      { rank: 2, cooldown: 2.5, cost: null, damage: 26, damageType: 'physical' },
-      { rank: 3, cooldown: 2.3, cost: null, damage: 35, damageType: 'physical' },
+      { rank: 1, cooldown: 2.5, cost: null, damage: 18, damageType: 'physical', levelRequired: 1, autoLearn: true },
+      { rank: 2, cooldown: 2.5, cost: null, damage: 26, damageType: 'physical', levelRequired: 4, autoLearn: true },
+      { rank: 3, cooldown: 2.3, cost: null, damage: 35, damageType: 'physical', levelRequired: 8, autoLearn: false },
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
@@ -23,9 +23,9 @@ export const abilities = {
     id: 'rend', name: 'Rend', icon: '🗡️',
     tree: SkillType.SWORD, tags: [AbilityTag.MELEE],
     ranks: [
-      { rank: 1, cooldown: 5.0, cost: null, damage: 14, stacks: 1, duration: 6 },
-      { rank: 2, cooldown: 4.8, cost: null, damage: 20, stacks: 2, duration: 6 },
-      { rank: 3, cooldown: 4.5, cost: null, damage: 28, stacks: 3, duration: 6 },
+      { rank: 1, cooldown: 5.0, cost: null, damage: 14, stacks: 1, duration: 6, levelRequired: 1, autoLearn: true },
+      { rank: 2, cooldown: 4.8, cost: null, damage: 20, stacks: 2, duration: 6, levelRequired: 4, autoLearn: true },
+      { rank: 3, cooldown: 4.5, cost: null, damage: 28, stacks: 3, duration: 6, levelRequired: 8, autoLearn: false },
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
@@ -40,9 +40,9 @@ export const abilities = {
     id: 'shield_bash', name: 'Shield Bash', icon: '🛡️',
     tree: SkillType.SHIELD, tags: [AbilityTag.MELEE],
     ranks: [
-      { rank: 1, cooldown: 6.0, cost: null, damage: 10, stunDuration: 0.8 },
-      { rank: 2, cooldown: 5.5, cost: null, damage: 16, stunDuration: 1.2 },
-      { rank: 3, cooldown: 5.0, cost: null, damage: 22, stunDuration: 1.6 },
+      { rank: 1, cooldown: 6.0, cost: null, damage: 10, stunDuration: 0.8, levelRequired: 1, autoLearn: true },
+      { rank: 2, cooldown: 5.5, cost: null, damage: 16, stunDuration: 1.2, levelRequired: 4, autoLearn: true },
+      { rank: 3, cooldown: 5.0, cost: null, damage: 22, stunDuration: 1.6, levelRequired: 8, autoLearn: true },
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
@@ -57,9 +57,9 @@ export const abilities = {
     id: 'fortify', name: 'Fortify', icon: '🏰',
     tree: SkillType.SHIELD, tags: [AbilityTag.DEFENSIVE],
     ranks: [
-      { rank: 1, cooldown: 10.0, cost: null, guardStacks: 2, healHp: 0 },
-      { rank: 2, cooldown: 9.5,  cost: null, guardStacks: 3, healHp: 0 },
-      { rank: 3, cooldown: 9.0,  cost: null, guardStacks: 4, healHp: 15 },
+      { rank: 1, cooldown: 10.0, cost: null, guardStacks: 2, healHp: 0,  levelRequired: 1, autoLearn: true },
+      { rank: 2, cooldown: 9.5,  cost: null, guardStacks: 3, healHp: 0,  levelRequired: 4, autoLearn: true },
+      { rank: 3, cooldown: 9.0,  cost: null, guardStacks: 4, healHp: 15, levelRequired: 8, autoLearn: false },
     ],
     targeting: 'self',
     execute(caster, targets, rank) {
@@ -76,9 +76,9 @@ export const abilities = {
     id: 'rally', name: 'Rally', icon: '📯',
     tree: SkillType.TACTICS, tags: [AbilityTag.SUPPORT],
     ranks: [
-      { rank: 1, cooldown: 12.0, cost: null, hasteStacks: 2, hasteDuration: 5 },
-      { rank: 2, cooldown: 11.0, cost: null, hasteStacks: 3, hasteDuration: 6 },
-      { rank: 3, cooldown: 10.0, cost: null, hasteStacks: 3, hasteDuration: 8, armorRestore: 10 },
+      { rank: 1, cooldown: 12.0, cost: null, hasteStacks: 2, hasteDuration: 5,                levelRequired: 1, autoLearn: true },
+      { rank: 2, cooldown: 11.0, cost: null, hasteStacks: 3, hasteDuration: 6,                levelRequired: 4, autoLearn: true },
+      { rank: 3, cooldown: 10.0, cost: null, hasteStacks: 3, hasteDuration: 8, armorRestore: 10, levelRequired: 8, autoLearn: false },
     ],
     targeting: 'all_allies',
     execute(caster, targets, rank) {
@@ -95,9 +95,9 @@ export const abilities = {
     id: 'ember_shot', name: 'Ember Shot', icon: '🔥',
     tree: SkillType.FIRE, tags: [AbilityTag.RANGED],
     ranks: [
-      { rank: 1, cooldown: 2.8, cost: null, damage: 20, burnChance: 0 },
-      { rank: 2, cooldown: 2.8, cost: null, damage: 28, burnChance: 0 },
-      { rank: 3, cooldown: 2.6, cost: null, damage: 38, burnChance: 0.5 },
+      { rank: 1, cooldown: 2.8, cost: null, damage: 20, burnChance: 0,   levelRequired: 1, autoLearn: true },
+      { rank: 2, cooldown: 2.8, cost: null, damage: 28, burnChance: 0,   levelRequired: 4, autoLearn: true },
+      { rank: 3, cooldown: 2.6, cost: null, damage: 38, burnChance: 0.5, levelRequired: 8, autoLearn: false },
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
@@ -113,9 +113,9 @@ export const abilities = {
     id: 'fireball', name: 'Fireball', icon: '💥',
     tree: SkillType.FIRE, tags: [AbilityTag.RANGED],
     ranks: [
-      { rank: 1, cooldown: 5.5, cost: { type: 'energy', amount: 40 }, damage: 35, splashDmg: 15, burnStacks: 0 },
-      { rank: 2, cooldown: 5.2, cost: { type: 'energy', amount: 40 }, damage: 48, splashDmg: 22, burnStacks: 0 },
-      { rank: 3, cooldown: 5.0, cost: { type: 'energy', amount: 40 }, damage: 65, splashDmg: 30, burnStacks: 1 },
+      { rank: 1, cooldown: 5.5, cost: { type: 'energy', amount: 40 }, damage: 35, splashDmg: 15, burnStacks: 0, levelRequired: 1, autoLearn: true },
+      { rank: 2, cooldown: 5.2, cost: { type: 'energy', amount: 40 }, damage: 48, splashDmg: 22, burnStacks: 0, levelRequired: 4, autoLearn: true },
+      { rank: 3, cooldown: 5.0, cost: { type: 'energy', amount: 40 }, damage: 65, splashDmg: 30, burnStacks: 1, levelRequired: 8, autoLearn: false },
     ],
     targeting: 'single_enemy_with_splash',
     execute(caster, targets, rank) {
@@ -132,9 +132,9 @@ export const abilities = {
     id: 'void_bolt', name: 'Void Bolt', icon: '🌑',
     tree: SkillType.VOID, tags: [AbilityTag.RANGED],
     ranks: [
-      { rank: 1, cooldown: 3.0, cost: null, damage: 18 },
-      { rank: 2, cooldown: 3.0, cost: null, damage: 25 },
-      { rank: 3, cooldown: 2.8, cost: null, damage: 34, slowStacks: 1, slowDuration: 3 },
+      { rank: 1, cooldown: 3.0, cost: null, damage: 18,                               levelRequired: 1, autoLearn: true },
+      { rank: 2, cooldown: 3.0, cost: null, damage: 25,                               levelRequired: 4, autoLearn: true },
+      { rank: 3, cooldown: 2.8, cost: null, damage: 34, slowStacks: 1, slowDuration: 3, levelRequired: 8, autoLearn: false },
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
@@ -148,9 +148,9 @@ export const abilities = {
     id: 'entropy_field', name: 'Entropy Field', icon: '🌀',
     tree: SkillType.VOID, tags: [AbilityTag.RANGED],
     ranks: [
-      { rank: 1, cooldown: 10.0, cost: { type: 'energy', amount: 15 }, slowStacks: 1, slowDuration: 5 },
-      { rank: 2, cooldown: 9.5,  cost: { type: 'energy', amount: 15 }, slowStacks: 2, slowDuration: 6 },
-      { rank: 3, cooldown: 9.0,  cost: { type: 'energy', amount: 20 }, slowStacks: 3, slowDuration: 8, threatDrain: 15 },
+      { rank: 1, cooldown: 10.0, cost: { type: 'energy', amount: 15 }, slowStacks: 1, slowDuration: 5,                levelRequired: 1, autoLearn: true },
+      { rank: 2, cooldown: 9.5,  cost: { type: 'energy', amount: 15 }, slowStacks: 2, slowDuration: 6,                levelRequired: 4, autoLearn: true },
+      { rank: 3, cooldown: 9.0,  cost: { type: 'energy', amount: 20 }, slowStacks: 3, slowDuration: 8, threatDrain: 15, levelRequired: 8, autoLearn: false },
     ],
     targeting: 'all_enemies',
     execute(caster, targets, rank) {
@@ -166,7 +166,7 @@ export const abilities = {
   heavy_swing: {
     id: 'heavy_swing', name: 'Heavy Swing', icon: '⚔️',
     tags: [AbilityTag.MELEE],
-    ranks: [{ rank: 1, cooldown: 3.2, cost: null, damage: 22 }],
+    ranks: [{ rank: 1, cooldown: 3.2, cost: null, damage: 22, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
       return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' }];
@@ -176,7 +176,7 @@ export const abilities = {
   bash: {
     id: 'bash', name: 'Bash', icon: '💢',
     tags: [AbilityTag.MELEE],
-    ranks: [{ rank: 1, cooldown: 8.0, cost: null, damage: 12, stunDuration: 0.6 }],
+    ranks: [{ rank: 1, cooldown: 8.0, cost: null, damage: 12, stunDuration: 0.6, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
       return [
@@ -189,7 +189,7 @@ export const abilities = {
   bolt_shot: {
     id: 'bolt_shot', name: 'Bolt Shot', icon: '🏹',
     tags: [AbilityTag.RANGED],
-    ranks: [{ rank: 1, cooldown: 2.8, cost: null, damage: 18 }],
+    ranks: [{ rank: 1, cooldown: 2.8, cost: null, damage: 18, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_any',
     execute(caster, targets, rank) {
       return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' }];
@@ -199,7 +199,7 @@ export const abilities = {
   suppressing_fire: {
     id: 'suppressing_fire', name: 'Suppressing Fire', icon: '🎯',
     tags: [AbilityTag.RANGED],
-    ranks: [{ rank: 1, cooldown: 9.0, cost: null, damage: 10 }],
+    ranks: [{ rank: 1, cooldown: 9.0, cost: null, damage: 10, levelRequired: 1, autoLearn: true }],
     targeting: 'all_player_front',
     execute(caster, targets, rank) {
       return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'physical' }));
@@ -209,7 +209,7 @@ export const abilities = {
   gnaw: {
     id: 'gnaw', name: 'Gnaw', icon: '🐀',
     tags: [AbilityTag.MELEE],
-    ranks: [{ rank: 1, cooldown: 1.8, cost: null, damage: 8 }],
+    ranks: [{ rank: 1, cooldown: 1.8, cost: null, damage: 8, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
       return [
@@ -222,7 +222,7 @@ export const abilities = {
   swarm: {
     id: 'swarm', name: 'Swarm', icon: '💨',
     tags: [AbilityTag.MELEE],
-    ranks: [{ rank: 1, cooldown: 5.0, cost: null, damage: 5 }],
+    ranks: [{ rank: 1, cooldown: 5.0, cost: null, damage: 5, levelRequired: 1, autoLearn: true }],
     targeting: 'all_player_front',
     execute(caster, targets, rank) {
       return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'physical' }));
@@ -232,7 +232,7 @@ export const abilities = {
   hammer_blow: {
     id: 'hammer_blow', name: 'Hammer Blow', icon: '🔨',
     tags: [AbilityTag.MELEE],
-    ranks: [{ rank: 1, cooldown: 4.0, cost: null, damage: 28, stunDuration: 0.8 }],
+    ranks: [{ rank: 1, cooldown: 4.0, cost: null, damage: 28, stunDuration: 0.8, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
       return [
@@ -245,7 +245,7 @@ export const abilities = {
   shield_slam_enemy: {
     id: 'shield_slam_enemy', name: 'Shield Slam', icon: '🛡️',
     tags: [AbilityTag.MELEE],
-    ranks: [{ rank: 1, cooldown: 7.0, cost: null, damage: 18, guardStacks: 2 }],
+    ranks: [{ rank: 1, cooldown: 7.0, cost: null, damage: 18, guardStacks: 2, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
       return [
@@ -258,7 +258,7 @@ export const abilities = {
   brace: {
     id: 'brace', name: 'Brace', icon: '🏰',
     tags: [AbilityTag.DEFENSIVE],
-    ranks: [{ rank: 1, cooldown: 12.0, cost: null, guardStacks: 3 }],
+    ranks: [{ rank: 1, cooldown: 12.0, cost: null, guardStacks: 3, levelRequired: 1, autoLearn: true }],
     targeting: 'self',
     execute(caster, targets, rank) {
       return [
@@ -272,8 +272,8 @@ export const abilities = {
     id: 'command_strike', name: 'Command Strike', icon: '⚔️',
     tags: [AbilityTag.MELEE],
     ranks: [
-      { rank: 1, cooldown: 3.0, cost: null, damage: 32 },
-      { rank: 2, cooldown: 3.0, cost: null, damage: 42 }, // Phase 2
+      { rank: 1, cooldown: 3.0, cost: null, damage: 32, levelRequired: 1, autoLearn: true },
+      { rank: 2, cooldown: 3.0, cost: null, damage: 42, levelRequired: 5, autoLearn: true }, // Phase 2
     ],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
@@ -284,7 +284,7 @@ export const abilities = {
   waterlogged_roar: {
     id: 'waterlogged_roar', name: 'Waterlogged Roar', icon: '😤',
     tags: [AbilityTag.CAST],
-    ranks: [{ rank: 1, cooldown: 12.0, cost: null, slowStacks: 2, slowDuration: 4, selfThreat: 2 }],
+    ranks: [{ rank: 1, cooldown: 12.0, cost: null, slowStacks: 2, slowDuration: 4, selfThreat: 2, levelRequired: 1, autoLearn: true }],
     targeting: 'all_players',
     execute(caster, targets, rank) {
       const effects = targets.map(t => ({
@@ -298,7 +298,7 @@ export const abilities = {
   choking_grip: {
     id: 'choking_grip', name: 'Choking Grip', icon: '✊',
     tags: [AbilityTag.MELEE],
-    ranks: [{ rank: 1, cooldown: 9.0, cost: null, damage: 20, rootDuration: 3.0 }],
+    ranks: [{ rank: 1, cooldown: 9.0, cost: null, damage: 20, rootDuration: 3.0, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_any',
     execute(caster, targets, rank) {
       return [
@@ -311,7 +311,7 @@ export const abilities = {
   sergeants_will: {
     id: 'sergeants_will', name: "Sergeant's Will", icon: '💪',
     tags: [AbilityTag.CAST],
-    ranks: [{ rank: 1, cooldown: 10.0, cost: null, hasteStacks: 2, hasteDuration: 6 }],
+    ranks: [{ rank: 1, cooldown: 10.0, cost: null, hasteStacks: 2, hasteDuration: 6, levelRequired: 1, autoLearn: true }],
     targeting: 'self',
     execute(caster, targets, rank) {
       return [{ type: 'apply_status', target: caster, statusId: 'haste', stacks: rank.hasteStacks, duration: rank.hasteDuration }];

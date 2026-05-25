@@ -362,7 +362,7 @@ const Game = {
           startingHP:   prog.paragonHP?.[id] ?? null,
         }));
 
-    this.engine.init(config, ev, this.activeLocation.combatMods ?? []);
+    this.engine.init(config, ev, this.activeLocation.level ?? 1, this.activeLocation.combatMods ?? []);
     this.engine.setSpeed(this.speedMult);
 
     UI.buildBattleCards(this.engine);
