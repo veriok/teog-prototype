@@ -162,6 +162,137 @@ export const abilities = {
     }
   },
 
+  // ── Aldric — Flood ────────────────────────────────────────────────────
+  wave_strike: {
+    id: 'wave_strike', name: 'Wave Strike', icon: '🌊',
+    tree: SkillType.FLOOD, tags: [AbilityTag.MELEE],
+    ranks: [
+      { rank: 1, cooldown: 3.0, cost: null, damage: 16, levelRequired: 1,  autoLearn: true },
+      { rank: 2, cooldown: 2.8, cost: null, damage: 24, levelRequired: 5,  autoLearn: true },
+      { rank: 3, cooldown: 2.6, cost: null, damage: 32, levelRequired: 10, autoLearn: true },
+    ],
+    targeting: 'single_enemy_front',
+    execute(caster, targets, rank) {
+      return [
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' }
+      ];
+    }
+  },
+
+  tide_surge: {
+    id: 'tide_surge', name: 'Tide Surge', icon: '💧',
+    tree: SkillType.FLOOD, tags: [AbilityTag.MELEE],
+    ranks: [
+      { rank: 1, cooldown: 7.0, cost: null, damage: 10, slowStacks: 1, slowDuration: 4, levelRequired: 1,  autoLearn: true },
+      { rank: 2, cooldown: 6.5, cost: null, damage: 15, slowStacks: 1, slowDuration: 5, levelRequired: 5,  autoLearn: true },
+      { rank: 3, cooldown: 6.0, cost: null, damage: 20, slowStacks: 2, slowDuration: 5, levelRequired: 10, autoLearn: true },
+    ],
+    targeting: 'all_enemies',
+    execute(caster, targets, rank) {
+      return targets.flatMap(t => [
+        { type: 'damage', target: t, amount: rank.damage, damageType: 'physical' },
+        { type: 'apply_status', target: t, statusId: 'slow', stacks: rank.slowStacks, duration: rank.slowDuration },
+      ]);
+    }
+  },
+
+  drowning_grasp: {
+    id: 'drowning_grasp', name: 'Drowning Grasp', icon: '🫧',
+    tree: SkillType.FLOOD, tags: [AbilityTag.MELEE],
+    ranks: [
+      { rank: 1, cooldown: 9.0, cost: null, damage: 20, rootDuration: 2.5, levelRequired: 1,  autoLearn: true },
+      { rank: 2, cooldown: 8.5, cost: null, damage: 28, rootDuration: 3.0, levelRequired: 5,  autoLearn: true },
+      { rank: 3, cooldown: 8.0, cost: null, damage: 38, rootDuration: 4.0, levelRequired: 10, autoLearn: true },
+    ],
+    targeting: 'single_enemy_any',
+    execute(caster, targets, rank) {
+      return [
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' },
+        { type: 'apply_status', target: targets[0], statusId: 'root', stacks: 1, duration: rank.rootDuration },
+      ];
+    }
+  },
+
+  tidal_wave: {
+    id: 'tidal_wave', name: 'Tidal Wave', icon: '🌀',
+    tree: SkillType.FLOOD, tags: [AbilityTag.CAST],
+    ranks: [
+      { rank: 1, cooldown: 14.0, cost: null, damage: 22, shredStacks: 1, levelRequired: 1,  autoLearn: true },
+      { rank: 2, cooldown: 13.0, cost: null, damage: 32, shredStacks: 2, levelRequired: 5,  autoLearn: true },
+      { rank: 3, cooldown: 12.0, cost: null, damage: 44, shredStacks: 3, levelRequired: 10, autoLearn: true },
+    ],
+    targeting: 'all_enemies',
+    execute(caster, targets, rank) {
+      return targets.flatMap(t => [
+        { type: 'damage', target: t, amount: rank.damage, damageType: 'magic' },
+        { type: 'apply_status', target: t, statusId: 'armor_shred', stacks: rank.shredStacks, duration: 12 },
+      ]);
+    }
+  },
+
+  // ── Ysolde — Staff ────────────────────────────────────────────────────
+  staff_strike: {
+    id: 'staff_strike', name: 'Staff Strike', icon: '🪄',
+    tree: SkillType.STAFF, tags: [AbilityTag.MELEE],
+    ranks: [
+      { rank: 1, cooldown: 2.2, cost: null, damage: 14, damageType: 'physical', levelRequired: 1,  autoLearn: true },
+      { rank: 2, cooldown: 2.0, cost: null, damage: 20, damageType: 'physical', levelRequired: 5,  autoLearn: true },
+      { rank: 3, cooldown: 1.8, cost: null, damage: 28, damageType: 'physical', levelRequired: 10, autoLearn: true },
+    ],
+    targeting: 'single_enemy_front',
+    execute(caster, targets, rank) {
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: rank.damageType }];
+    }
+  },
+
+  crushing_blow: {
+    id: 'crushing_blow', name: 'Crushing Blow', icon: '💥',
+    tree: SkillType.STAFF, tags: [AbilityTag.MELEE],
+    ranks: [
+      { rank: 1, cooldown: 7.0, cost: null, damage: 26, stunDuration: 0.8, levelRequired: 1,  autoLearn: true },
+      { rank: 2, cooldown: 6.5, cost: null, damage: 36, stunDuration: 1.2, levelRequired: 5,  autoLearn: true },
+      { rank: 3, cooldown: 6.0, cost: null, damage: 48, stunDuration: 1.6, levelRequired: 10, autoLearn: true },
+    ],
+    targeting: 'single_enemy_front',
+    execute(caster, targets, rank) {
+      return [
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' },
+        { type: 'apply_status', target: targets[0], statusId: 'stun', stacks: 1, duration: rank.stunDuration },
+      ];
+    }
+  },
+
+  stalwart_guard: {
+    id: 'stalwart_guard', name: 'Stalwart Guard', icon: '🛡️',
+    tree: SkillType.STAFF, tags: [AbilityTag.DEFENSIVE],
+    ranks: [
+      { rank: 1, cooldown: 11.0, cost: null, guardStacks: 2, levelRequired: 1,  autoLearn: true },
+      { rank: 2, cooldown: 10.5, cost: null, guardStacks: 3, levelRequired: 5,  autoLearn: true },
+      { rank: 3, cooldown: 10.0, cost: null, guardStacks: 4, levelRequired: 10, autoLearn: true },
+    ],
+    targeting: 'self',
+    execute(caster, targets, rank) {
+      return [
+        { type: 'apply_status', target: caster, statusId: 'guard', stacks: rank.guardStacks, duration: 12 },
+        { type: 'combat_refresh', target: caster },
+      ];
+    }
+  },
+
+  sweeping_arc: {
+    id: 'sweeping_arc', name: 'Sweeping Arc', icon: '🌙',
+    tree: SkillType.STAFF, tags: [AbilityTag.MELEE],
+    ranks: [
+      { rank: 1, cooldown: 6.0, cost: null, damage: 12, levelRequired: 1,  autoLearn: true },
+      { rank: 2, cooldown: 5.5, cost: null, damage: 18, levelRequired: 5,  autoLearn: true },
+      { rank: 3, cooldown: 5.0, cost: null, damage: 26, levelRequired: 10, autoLearn: true },
+    ],
+    targeting: 'all_player_front',
+    execute(caster, targets, rank) {
+      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'physical' }));
+    }
+  },
+
   // ── Enemies ───────────────────────────────────────────────────────────
   heavy_swing: {
     id: 'heavy_swing', name: 'Heavy Swing', icon: '⚔️',

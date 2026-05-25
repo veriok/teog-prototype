@@ -9,7 +9,7 @@ export const Save = {
   // ── Default state ──────────────────────────────────────────────────────
   _default() {
     return {
-      version: 5,
+      version: 6,
       selectedLocationId: null,
       locationProgress: {
         flooded_cellars: {
@@ -78,6 +78,20 @@ export const Save = {
           p.randomEventCounts = p.randomEventCounts || {};
         }
         parsed.version = 5;
+      }
+      // Migrate v5 → v6 (add skill levels, XP, and unlockable slot to paragonStates)
+      if (parsed.version < 6) {
+        for (const [paragonId, ps] of Object.entries(parsed.paragonStates ?? {})) {
+          if (!ps.skillLevels)        ps.skillLevels        = {};
+          if (!ps.skillXP)            ps.skillXP            = {};
+          if (!ps.unlockedSkillTypes) ps.unlockedSkillTypes = [];
+          // Seed skill level 1 / 0 XP for every tree that already has ability slots.
+          for (const tree of Object.keys(ps.skillAbilitySlots ?? {})) {
+            ps.skillLevels[tree] = ps.skillLevels[tree] ?? 1;
+            ps.skillXP[tree]     = ps.skillXP[tree]     ?? 0;
+          }
+        }
+        parsed.version = 6;
       }
       return Object.assign(this._default(), parsed);
     } catch (e) {

@@ -8,14 +8,19 @@ export const actors = {
     bio: 'A battle-hardened knight of the old order. Sworn to shield those who cannot shield themselves.',
     subtype: 'paragon', row: 'front',
     tags: ['humanoid'],
+    skillTypes: ['sword', 'shield', 'flood'],   // 3 base trees; TACTICS is the unlockable 4th
     baseHP: 160, baseArmor: 80,
     resource: { type: 'rage', max: 100, current: 0, regenPerSec: 0, decayPerSec: 2 },
     globalSpeed: 1.0,
     abilities: [
-      { abilityId: 'sword_slash',  rank: 1 },
-      { abilityId: 'rend',         rank: 1 },
-      { abilityId: 'shield_bash',  rank: 1 },
-      { abilityId: 'fortify',      rank: 1 },
+      { abilityId: 'sword_slash',    rank: 1 },
+      { abilityId: 'rend',           rank: 1 },
+      { abilityId: 'shield_bash',    rank: 1 },
+      { abilityId: 'fortify',        rank: 1 },
+      { abilityId: 'wave_strike',    rank: 1 },
+      { abilityId: 'tide_surge',     rank: 1 },
+      { abilityId: 'drowning_grasp', rank: 1 },
+      { abilityId: 'tidal_wave',     rank: 1 },
     ]
   },
 
@@ -25,6 +30,7 @@ export const actors = {
     bio: 'A scholar of the void arts. She studies destruction with the calm of someone who has already seen the end.',
     subtype: 'paragon', row: 'back',
     tags: ['humanoid'],
+    skillTypes: ['staff', 'fire', 'void'],       // 3 base trees
     baseHP: 95, baseArmor: 30,
     resource: { type: 'energy', max: 100, current: 100, regenPerSec: 8, decayPerSec: 0 },
     globalSpeed: 1.0,
@@ -33,6 +39,10 @@ export const actors = {
       { abilityId: 'fireball',      rank: 1 },
       { abilityId: 'void_bolt',     rank: 1 },
       { abilityId: 'entropy_field', rank: 1 },
+      { abilityId: 'staff_strike',  rank: 1 },
+      { abilityId: 'crushing_blow', rank: 1 },
+      { abilityId: 'stalwart_guard',rank: 1 },
+      { abilityId: 'sweeping_arc',  rank: 1 },
     ]
   },
 

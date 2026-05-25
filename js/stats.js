@@ -65,6 +65,26 @@ export function computeActorStats(actor) {
   actor.currentArmor = Math.min(actor.currentArmor, actor.maxArmor);
   actor.baseSpeed    = s.speed;
   actor.stats        = s;
+
+  // ── Skill-level bonuses (paragons only) ──────────────────────────────
+  // Each equipped skill contributes +3 HP and (if energy resource) +2 energy
+  // per level. Bonuses are additive across both equipped skills.
+  if (actor.subtype === 'paragon' && actor.skillLevels && actor.equippedSkillTypes) {
+    let skillSum = 0;
+    for (const tree of actor.equippedSkillTypes) {
+      if (tree) skillSum += actor.skillLevels[tree] ?? 1;
+    }
+    const hpBonus = skillSum * 3;
+    actor.maxHP        += hpBonus;
+    actor.currentHP     = Math.min(actor.currentHP + hpBonus, actor.maxHP);
+    actor.stats.hp      = actor.maxHP;
+
+    if (actor.resourceType === 'energy') {
+      const energyBonus   = skillSum * 2;
+      actor.resourceMax  += energyBonus;
+      actor.resource      = Math.min(actor.resource + energyBonus, actor.resourceMax);
+    }
+  }
 }
 
 // ── getRankForLevel ─────────────────────────────────────────────────────────

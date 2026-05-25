@@ -61,6 +61,8 @@ export const ModifierType = Object.freeze({
   TACTICS: 'tactics',
   FIRE:    'fire',
   VOID:    'void',
+  FLOOD:   'flood',
+  STAFF:   'staff',
   GENERIC: 'generic',
   ATTRIBUTE: 'attribute',
 });
@@ -83,6 +85,8 @@ export const SkillType = Object.freeze({
   TACTICS: 'tactics',
   FIRE:    'fire',
   VOID:    'void',
+  FLOOD:   'flood',
+  STAFF:   'staff',
 });
 
 // ── Ability combat tags ────────────────────────────────────────────────────

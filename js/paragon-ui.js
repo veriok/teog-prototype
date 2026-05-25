@@ -6,10 +6,11 @@
 
 import { DATA }                            from './data/index.js';
 import { ItemType, SkillType, MAX_DEPLOYED_PARAGONS } from './enums.js';
-import { canEquip, getUnlockedAbilities }  from './paragon.js';
+import { canEquip, getUnlockedAbilities, getCurrentAbilityRank }  from './paragon.js';
 import { EquippedItems }                   from './inventory.js';
 import { computeActorStats }               from './stats.js';
 import { Tooltips }                        from './tooltips.js';
+import { XP_PER_LEVEL, SKILL_LEVEL_MAX }   from './experience.js';
 
 // ── Internal state ────────────────────────────────────────────────────────
 
@@ -48,6 +49,8 @@ const SKILL_LABELS = {
   [SkillType.TACTICS]: 'Tactics',
   [SkillType.FIRE]:    'Fire',
   [SkillType.VOID]:    'Void',
+  [SkillType.FLOOD]:   'Flood',
+  [SkillType.STAFF]:   'Staff',
 };
 
 const ITEM_SLOT_LABELS = {
@@ -100,7 +103,18 @@ function _paragonState(paragonId) {
   if (!_state.paragonStates[paragonId]) {
     _state.paragonStates[paragonId] = _defaultParagonState(paragonId);
   }
-  return _state.paragonStates[paragonId];
+  const ps = _state.paragonStates[paragonId];
+  // Ensure fields added in later save versions are always present.
+  ps.skillLevels        ??= {};
+  ps.skillXP            ??= {};
+  ps.unlockedSkillTypes ??= [];
+  // Seed any missing trees from the actor def.
+  const def = DATA.actors[paragonId];
+  for (const tree of (def?.skillTypes ?? [])) {
+    ps.skillLevels[tree] ??= 1;
+    ps.skillXP[tree]     ??= 0;
+  }
+  return ps;
 }
 
 // Returns a live EquippedItems instance for a paragon, reconstructed from
@@ -162,6 +176,11 @@ export const ParagonUI = {
     _getEngine = getEngine;
     _save      = saveCallback;
     this._bindEvents();
+
+    // Re-render skill panels whenever a skill levels up.
+    document.addEventListener('skillLevelUp', () => {
+      if (_selectedId) this._renderSkillPanels();
+    });
   },
 
   // ── Render ────────────────────────────────────────────────────────────
@@ -308,15 +327,13 @@ export const ParagonUI = {
   },
 
   _renderSkillPanels() {
-    const ps = _paragonState(_selectedId);
+    const ps  = _paragonState(_selectedId);
     const def = DATA.actors[_selectedId];
 
-    // Collect trees available on this paragon
-    const availableTrees = [...new Set(
-      (def?.abilities ?? [])
-        .map(a => DATA.abilities[a.abilityId]?.tree)
-        .filter(Boolean)
-    )];
+    // Available trees = base skill types from def + quest-unlocked extras.
+    const baseTrees  = def?.skillTypes ?? [];
+    const extraTrees = ps.unlockedSkillTypes ?? [];
+    const availableTrees = [...new Set([...baseTrees, ...extraTrees])];
 
     [0, 1].forEach(p => {
       const panel    = document.querySelector(`.skill-panel[data-panel="${p}"]`);
@@ -334,6 +351,37 @@ export const ParagonUI = {
         opt.textContent = SKILL_LABELS[t] ?? t;
         if (t === tree) opt.selected = true;
         select.appendChild(opt);
+      }
+
+      // ── Skill level badge + XP bar ──────────────────────────────────
+      const treeCol  = panel.querySelector('.skill-tree-col');
+      let levelBadge = panel.querySelector('.skill-level-badge');
+      let xpBarWrap  = panel.querySelector('.xp-bar-wrap');
+      if (!levelBadge) {
+        levelBadge = document.createElement('span');
+        levelBadge.className = 'skill-level-badge';
+        treeCol.appendChild(levelBadge);
+      }
+      if (!xpBarWrap) {
+        xpBarWrap = document.createElement('div');
+        xpBarWrap.className = 'xp-bar-wrap';
+        xpBarWrap.innerHTML = '<div class="xp-bar"><div class="xp-fill"></div></div><span class="xp-label"></span>';
+        treeCol.appendChild(xpBarWrap);
+      }
+      if (tree) {
+        const lv      = ps.skillLevels?.[tree] ?? 1;
+        const xp      = ps.skillXP?.[tree]     ?? 0;
+        const needed  = lv < SKILL_LEVEL_MAX ? (XP_PER_LEVEL[lv] ?? 0) : 0;
+        const pct     = needed > 0 ? Math.min(100, (xp / needed) * 100) : 100;
+        levelBadge.textContent         = `Lv ${lv}`;
+        levelBadge.style.display       = '';
+        xpBarWrap.style.display        = '';
+        xpBarWrap.querySelector('.xp-fill').style.width = `${pct}%`;
+        xpBarWrap.querySelector('.xp-label').textContent =
+          lv < SKILL_LEVEL_MAX ? `${xp} / ${needed} XP` : 'MAX';
+      } else {
+        levelBadge.style.display  = 'none';
+        xpBarWrap.style.display   = 'none';
       }
 
       // Ability slots + wrapper filled-state
@@ -362,10 +410,12 @@ export const ParagonUI = {
           const name = document.createElement('span');
           name.className   = 'abil-slot-name';
           name.textContent = ab.name;
-          const pAbility = def?.abilities?.find(a => a.abilityId === abilityId);
-          const rankEl   = document.createElement('span');
+          // Derive rank from current skill level instead of static actor def rank.
+          const skillLevel = tree ? (ps.skillLevels?.[tree] ?? 1) : 1;
+          const rank       = getCurrentAbilityRank(ab, skillLevel);
+          const rankEl     = document.createElement('span');
           rankEl.className   = 'abil-slot-rank';
-          rankEl.textContent = `R${pAbility?.rank ?? 1}`;
+          rankEl.textContent = `R${rank}`;
           slotEl.appendChild(icon);
           slotEl.appendChild(name);
           slotEl.appendChild(rankEl);
@@ -498,13 +548,22 @@ export const ParagonUI = {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    // Build a temporary actor to compute stats including equipped items.
-    const def     = DATA.actors[_selectedId];
-    const actor   = {
-      maxHP:       def.baseHP,
-      maxArmor:    def.baseArmor,
-      baseSpeed:   def.globalSpeed ?? 1.0,
-      equippedItems: _getEquipped(_selectedId),
+    // Build a temporary actor to compute stats including equipped items and skill levels.
+    const def = DATA.actors[_selectedId];
+    const ps  = _paragonState(_selectedId);
+    const actor = {
+      subtype:            'paragon',
+      maxHP:              def.baseHP,
+      currentHP:          def.baseHP,
+      maxArmor:           def.baseArmor,
+      currentArmor:       def.baseArmor,
+      baseSpeed:          def.globalSpeed ?? 1.0,
+      resourceType:       def.resource?.type ?? 'none',
+      resourceMax:        def.resource?.max  ?? 0,
+      resource:           def.resource?.current ?? 0,
+      equippedItems:      _getEquipped(_selectedId),
+      skillLevels:        ps.skillLevels        ?? {},
+      equippedSkillTypes: ps.activeSkillTypes    ?? [],
     };
     computeActorStats(actor);
     const stats = actor.stats ?? {};

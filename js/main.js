@@ -11,6 +11,8 @@ import { EventType }         from './enums.js';
 import { Cinematic }         from './cinematic.js';
 import { ParagonUI }         from './paragon-ui.js';
 import { checkRequirements } from './requirements.js';
+import { xpForEnemy }        from './experience.js';
+import { processSkillXp }    from './paragon.js';
 
 const Game = {
 
@@ -341,12 +343,14 @@ const Game = {
         }
       }
       return {
-        actorId:      entry.paragonId,
-        row:          entry.row,
-        slotIndex:    entry.index,
+        actorId:            entry.paragonId,
+        row:                entry.row,
+        slotIndex:          entry.index,
         abilityIds,
-        equippedItems: equipped,
-        startingHP:   prog.paragonHP?.[entry.paragonId] ?? null,
+        equippedItems:      equipped,
+        startingHP:         prog.paragonHP?.[entry.paragonId] ?? null,
+        skillLevels:        ps?.skillLevels        ?? {},
+        equippedSkillTypes: ps?.activeSkillTypes    ?? [],
       };
     });
 
@@ -392,6 +396,9 @@ const Game = {
     const prog = this._getLocProgress();
 
     document.getElementById('btn-pause')?.classList.remove('active');
+
+    // Award XP to equipped skills for both victory and defeat.
+    this._awardCombatXp();
 
     if (result === 'victory') {
       this.state.victories++;
@@ -442,6 +449,59 @@ const Game = {
 
     this._save();
     this._refreshStats();
+  },
+
+  // ── Award skill XP to paragons after combat ────────────────────────────
+  // Called for both victory and defeat. Only equipped skill trees gain XP.
+  _awardCombatXp() {
+    const enemies = this.engine.enemies;
+    if (!enemies || enemies.length === 0) return;
+
+    for (const paragon of this.engine.paragons) {
+      const ps  = this.state.paragonStates?.[paragon.defId];
+      const def = DATA.actors[paragon.defId];
+      if (!ps || !def) continue;
+
+      const equipped = paragon.equippedSkillTypes ?? ps.activeSkillTypes ?? [];
+      const xpLines  = [];
+      let   anyLevelUp = false;
+
+      for (const tree of equipped) {
+        if (!tree) continue;
+
+        // Ensure skill state exists (handles first-time or migrated saves).
+        ps.skillLevels[tree] ??= 1;
+        ps.skillXP[tree]     ??= 0;
+
+        const totalXp = enemies.reduce(
+          (sum, e) => sum + xpForEnemy(e, ps.skillLevels[tree]),
+          0
+        );
+        if (totalXp <= 0) { xpLines.push(`${tree}: +0 XP`); continue; }
+
+        const { newLevel, levelsGained, rankUps } =
+          processSkillXp(ps, tree, totalXp, paragon.defId, def);
+
+        xpLines.push(`${tree}: +${totalXp} XP`);
+
+        if (levelsGained > 0) {
+          anyLevelUp = true;
+          UI.log(
+            `${paragon.name} — ${tree} reached level ${newLevel}!`,
+            'system'
+          );
+          for (const { abilityId, newRank } of rankUps) {
+            const abName = DATA.abilities[abilityId]?.name ?? abilityId;
+            UI.log(`  ${abName} advanced to Rank ${newRank}.`, 'system');
+          }
+        }
+      }
+
+      UI.log(
+        `${paragon.name} gained XP — ${xpLines.join(' · ')}`,
+        'system'
+      );
+    }
   },
 
   // ── Return to location map (shared by defeat + back-to-map) ───────────

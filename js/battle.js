@@ -164,12 +164,14 @@ export class BattleEngine {
 
   // ── Build actors ───────────────────────────────────────────────────────
   // deployConfig: Array of {
-  //   actorId:       string,
-  //   row:           'front'|'back',
-  //   slotIndex:     number,
-  //   abilityIds:    string[],       // non-null ability ids from both skill panels
-  //   equippedItems: EquippedItems,
-  //   startingHP:    number|null,    // if set, overrides full HP (HP persistence between events)
+  //   actorId:            string,
+  //   row:                'front'|'back',
+  //   slotIndex:          number,
+  //   abilityIds:         string[],        // non-null ability ids from both skill panels
+  //   equippedItems:      EquippedItems,
+  //   startingHP:         number|null,     // if set, overrides full HP
+  //   skillLevels:        { [skillType]: number },  // current level per tree
+  //   equippedSkillTypes: string[],        // the two active skill panel trees
   // }
   init(deployConfig, eventDef, locationLevel = 1, locationMods = []) {
     this.locationMods = locationMods;
@@ -177,18 +179,22 @@ export class BattleEngine {
       const def   = DATA.actors[cfg.actorId];
       const actor = new ActorRuntime({ ...def, row: cfg.row });
 
+      // Attach skill progression data so stats.js and XP logic can read it.
+      actor.skillLevels        = cfg.skillLevels        ?? {};
+      actor.equippedSkillTypes = cfg.equippedSkillTypes ?? [];
+
       // Replace abilities with only those the player has assigned.
-      // An empty list is valid — the paragon simply won't act.
+      // Rank is derived from the paragon's current skill level in that tree.
       actor.abilities = (cfg.abilityIds ?? []).map(abilityId => {
-        const entry  = def.abilities.find(a => a.abilityId === abilityId);
-        const abDef  = DATA.abilities[abilityId];
-        if (!abDef || !entry) return null;
-        const rankDef = abDef.ranks[entry.rank - 1] || abDef.ranks[0];
+        const abDef = DATA.abilities[abilityId];
+        if (!abDef) return null;
+        const skillLevel = cfg.skillLevels?.[abDef.tree] ?? 1;
+        const rankDef    = getRankForLevel(abDef, skillLevel);
         return {
           id: abDef.id, name: abDef.name, icon: abDef.icon,
           tags: abDef.tags ?? [], targeting: abDef.targeting,
           execute: abDef.execute.bind(abDef),
-          currentRank: entry.rank, rankDef,
+          currentRank: rankDef.rank, rankDef,
           maxCooldown: rankDef.cooldown,
           currentCooldown: rankDef.cooldown * Math.random(),
           cost: rankDef.cost || null,
