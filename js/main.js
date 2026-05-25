@@ -39,6 +39,11 @@ const Game = {
         .map(a => a.id);
     }
 
+    // Auto-deploy Aldric to front-centre on first launch
+    if (this.state.battlefield.length === 0 && this.state.unlockedParagonIds.includes('aldric')) {
+      this.state.battlefield.push({ row: 'front', index: 1, paragonId: 'aldric' });
+    }
+
     this.inventory = new Inventory(this.state.inventoryCapacity ?? 20);
     this.inventory.load(this.state.inventoryItems ?? []);
 

@@ -1478,6 +1478,49 @@ body {
   gap: 20px;
 }
 
+#inv-topbar-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+#inv-sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#inv-sort-label {
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  margin-right: 2px;
+}
+
+.sort-btn {
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  background: transparent;
+  border: 1px solid var(--border-dim);
+  color: var(--text-dim);
+  padding: 2px 8px;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+  transition: var(--transition);
+}
+.sort-btn:hover {
+  border-color: var(--border-bright);
+  color: var(--text-parchment);
+}
+.sort-btn.active {
+  border-color: var(--border-gold);
+  color: var(--text-gold);
+  background: rgba(107,81,32,0.15);
+}
+
 .currency-item {
   display: flex;
   align-items: center;
@@ -1621,7 +1664,7 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
-  width: 100%;
+  flex: 1;
 }
 
 #inv-detail-name {
@@ -1664,6 +1707,9 @@ body {
 
 /* ── Sell button ─────────────────────────────────────────────────────────────────── */
 .btn-sell {
+  position: relative;
+  overflow: hidden;
+  min-width: 96px;
   border-color: #5a9e3a;
   color: #7ec45c;
 }
@@ -1671,6 +1717,76 @@ body {
   background: rgba(60,100,30,0.3);
   box-shadow: 0 0 10px rgba(94,180,62,0.4);
 }
+
+.sell-fill {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 0;
+  background: #7ec45c;
+  pointer-events: none;
+  transition: none;
+}
+
+/* Multi-sell button */
+.btn-multi-sell {
+  border-color: #5a8a4a;
+  color: #7ec45c;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  margin-left: auto;
+}
+.btn-multi-sell:hover {
+  background: rgba(60,100,30,0.3);
+}
+.btn-multi-sell:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Multi-sell modal */
+.multi-sell-rarities {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.multi-sell-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  padding: 3px 0;
+}
+.multi-sell-row input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #7ec45c;
+  flex-shrink: 0;
+}
+.multi-sell-name { flex: 1; }
+.multi-sell-count { color: var(--text-dim); font-size: 0.72rem; }
+.multi-sell-souls { color: var(--text-gold); font-size: 0.72rem; min-width: 64px; text-align: right; }
+.multi-sell-preview {
+  border-top: 1px solid var(--border-dim);
+  padding-top: 8px;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  color: var(--text-parchment);
+}
+.multi-sell-preview strong { color: var(--text-gold); }
+.multi-sell-result {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  color: var(--text-parchment);
+  text-align: center;
+  padding: 8px 0;
+}
+.multi-sell-result strong { color: var(--text-gold); }
 
 /* ── Loot Modal ─────────────────────────────────────────────────────────────────── */
 .loot-item-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }

@@ -359,9 +359,18 @@
     <div class="tab-panel" id="tab-inventory">
       <div id="inv-topbar">
         <div id="inv-currencies"><!-- JS rendered --></div>
-        <div id="inv-status-strip">
-          <span id="inv-capacity-label"></span>
-          <button class="btn" id="btn-expand-inv">+ Expand</button>
+        <div id="inv-topbar-right">
+          <div id="inv-sort-bar">
+            <span id="inv-sort-label">Sort</span>
+            <button class="sort-btn active" data-sort="name">Name</button>
+            <button class="sort-btn" data-sort="type">Type</button>
+            <button class="sort-btn" data-sort="rarity">Rarity</button>
+            <button class="sort-btn" data-sort="value">Value</button>
+          </div>
+          <div id="inv-status-strip">
+            <span id="inv-capacity-label"></span>
+            <button class="btn" id="btn-expand-inv">+ Expand</button>
+          </div>
         </div>
       </div>
       <div id="inv-grid"><!-- JS rendered --></div>
@@ -369,12 +378,16 @@
         <div id="inv-detail-hint">Select an item to view details.</div>
         <div id="inv-detail-item" style="display:none">
           <span id="inv-detail-name"></span>
-          <button class="btn btn-sell" id="btn-sell-item" disabled>Sell</button>
+          <button class="btn btn-sell" id="btn-sell-item" disabled>
+            <span>Sell</span>
+            <div class="sell-fill"></div>
+          </button>
           <button class="btn btn-danger" id="btn-delete-item">
             <span>Destroy</span>
             <div class="delete-fill"></div>
           </button>
         </div>
+        <button class="btn btn-multi-sell" id="btn-multi-sell" disabled>⚡ Sell by Rarity</button>
       </div>
     </div>
 
