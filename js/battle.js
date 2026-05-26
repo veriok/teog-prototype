@@ -517,16 +517,11 @@ export class BattleEngine {
           }
         }
 
-        // Armor DR — uniform for all damage types: 1 DR per 25 current armor
-        const basedr = Math.floor(target.effectiveArmor() / 25);
+        // Armor DR — 1 DR per 15 current armor
+        const basedr = Math.floor(target.effectiveArmor() / 15);
         const dr     = effect.armorPierce ? Math.floor(basedr * (1 - effect.armorPierce)) : basedr;
-        const effective = Math.max(0, raw - dr);
 
-        // Distribute between armor pool and HP
-        const armorHit = Math.min(target.currentArmor, effective);
-        let   hpHit    = effective - armorHit;
-
-        // Resistance — applied LAST, to the HP-hitting portion only
+        // Resistance — applied to the full effective damage (after DR, before armor distribution)
         const resistVal = target.getEffectiveResistance(dtype);
         if (resistVal >= 1.5) {
           // Fully immune — skip damage entirely
@@ -534,7 +529,11 @@ export class BattleEngine {
           UI.flashCard(target, 'hit-flash');
           return;
         }
-        hpHit = Math.max(0, Math.round(hpHit * (1 - resistVal)));
+        const effective = Math.floor(Math.max(0, raw - dr) * (1 - resistVal));
+
+        // Distribute between armor pool and HP
+        const armorHit = Math.min(target.currentArmor, effective);
+        const hpHit    = effective - armorHit;
 
         // Apply
         target.currentArmor -= armorHit;

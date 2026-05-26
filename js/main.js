@@ -34,16 +34,16 @@ const Game = {
     UI.init();
     this.state = Save.load();
 
-    // Seed unlocked paragons on first launch (any actor with subtype=paragon).
+    // Seed unlocked paragons on first launch — only those available by default.
     if (this.state.unlockedParagonIds.length === 0) {
-      this.state.unlockedParagonIds = Object.values(DATA.actors)
-        .filter(a => a.subtype === 'paragon')
-        .map(a => a.id);
+      this.state.unlockedParagonIds = Object.values(DATA.paragons)
+        .filter(p => p.unlockedByDefault)
+        .map(p => p.id);
     }
 
-    // Auto-deploy Aldric to front-centre on first launch
-    if (this.state.battlefield.length === 0 && this.state.unlockedParagonIds.includes('aldric')) {
-      this.state.battlefield.push({ row: 'front', index: 1, paragonId: 'aldric' });
+    // Auto-deploy Godefroy to front-centre on first launch.
+    if (this.state.battlefield.length === 0 && this.state.unlockedParagonIds.includes('godefroy')) {
+      this.state.battlefield.push({ row: 'front', index: 1, paragonId: 'godefroy' });
     }
 
     this.inventory = new Inventory(this.state.inventoryCapacity ?? 20);
@@ -332,7 +332,10 @@ const Game = {
     );
 
     // Build deployConfig from saved battlefield + paragon states.
-    const deployConfig = (this.state.battlefield ?? []).map(entry => {
+    // Dead paragons (HP stored as 0) are excluded — they must be revived at a rest spot.
+    const deployConfig = (this.state.battlefield ?? [])
+      .filter(entry => (prog.paragonHP?.[entry.paragonId] ?? 1) > 0)
+      .map(entry => {
       const ps       = this.state.paragonStates?.[entry.paragonId];
       const equipped = EquippedItems.deserialize(ps?.equippedItems ?? {});
       const abilityIds = [];
@@ -354,10 +357,12 @@ const Game = {
       };
     });
 
-    // Fallback: if no battlefield configured, deploy default paragons.
+    // Fallback: if no battlefield configured, deploy default paragons (excluding dead ones).
     const config = deployConfig.length > 0
       ? deployConfig
-      : this.state.unlockedParagonIds.slice(0, 2).map((id, i) => ({
+      : this.state.unlockedParagonIds
+          .filter(id => (prog.paragonHP?.[id] ?? 1) > 0)
+          .slice(0, 2).map((id, i) => ({
           actorId: id, row: i === 0 ? 'front' : 'back', slotIndex: 0,
           abilityIds: Object.values(
             DATA.actors[id]?.abilities ?? []
@@ -392,7 +397,7 @@ const Game = {
   },
 
   // ── Battle end callback ────────────────────────────────────────────────
-  _onBattleEnd(result) {
+  async _onBattleEnd(result) {
     const prog = this._getLocProgress();
 
     document.getElementById('btn-pause')?.classList.remove('active');
@@ -405,11 +410,11 @@ const Game = {
       prog.completedEvents.push(prog.currentEventIndex);
 
       // Persist surviving paragon HP — carries into the next combat event.
-      // Dead paragons are removed so they start fresh (full HP) next fight.
+      // Dead paragons are stored at 0 so they remain dead until a rest spot revives them.
       if (!prog.paragonHP) prog.paragonHP = {};
       this.engine.paragons.forEach(p => {
         if (!p.isDead) prog.paragonHP[p.defId] = p.currentHP;
-        else           delete prog.paragonHP[p.defId];
+        else           prog.paragonHP[p.defId] = 0;
       });
 
       const defeatedEnemies = this.engine.enemies;
@@ -427,6 +432,7 @@ const Game = {
         UI.setStatus('Victory! The path ahead clears.', 'victory');
       }
 
+      if (isLastEvent) await this._checkParagonUnlocks('zone_conquered');
       const title = isLastEvent ? `${this.activeLocation.name} — Conquered!` : 'Victory';
       UI.showLootModal(title, added, {}, overflowed, () => { this._onNextEvent(); });
 
@@ -439,6 +445,7 @@ const Game = {
       UI.log('Defeat. The survivors retreat to the castle.', 'system');
       this._save();
       this._refreshStats();
+      await this._checkParagonUnlocks('defeat_count');
       UI.showModal(
         'Defeat',
         '<p style="font-family:var(--font-body);color:var(--text-parchment)">Your forces are routed. The paragons retreat to safety.</p>',
@@ -450,7 +457,30 @@ const Game = {
     this._save();
     this._refreshStats();
   },
+  // ── Paragon unlock check ───────────────────────────────────────────────────
+  // Iterates paragons with unlockCondition matching `trigger`, fires cinematics
+  // and adds to unlockedParagonIds for any whose condition is now satisfied.
+  // Safe to call multiple times — already-unlocked paragons are skipped.
+  async _checkParagonUnlocks(trigger) {
+    for (const def of Object.values(DATA.paragons)) {
+      if (!def.unlockCondition) continue;
+      if (def.unlockCondition.trigger !== trigger) continue;
+      if (this.state.unlockedParagonIds.includes(def.id)) continue;
 
+      let conditionMet = false;
+      if (trigger === 'defeat_count') {
+        conditionMet = this.state.defeats >= def.unlockCondition.count;
+      } else if (trigger === 'zone_conquered') {
+        conditionMet = !!this.state.locationProgress[def.unlockCondition.locationId]?.zoneConquered;
+      }
+      if (!conditionMet) continue;
+
+      this.state.unlockedParagonIds.push(def.id);
+      this._save();
+      UI.log(`${def.name} has joined your cause.`, 'system');
+      if (def.unlockCinematicId) await Cinematic.play(def.unlockCinematicId);
+    }
+  },
   // ── Award skill XP to paragons after combat ────────────────────────────
   // Called for both victory and defeat. Only equipped skill trees gain XP.
   _awardCombatXp() {
@@ -690,10 +720,11 @@ const Game = {
       if (!def) continue;
       const maxHP  = def.baseHP;
       const before = prog.paragonHP[entry.paragonId] ?? maxHP;
+      const isDead = before === 0;
       const healed = Math.min(maxHP, Math.round(before + maxHP * (ev.healPercent ?? 0.3)));
       const gained = healed - before;
       prog.paragonHP[entry.paragonId] = healed;
-      healedParagons.push({ id: entry.paragonId, def, currentHP: healed, maxHP, gained });
+      healedParagons.push({ id: entry.paragonId, def, currentHP: healed, maxHP, gained, isDead });
     }
 
     prog.completedEvents.push(prog.currentEventIndex);
@@ -701,7 +732,9 @@ const Game = {
 
     // Log healing to the battle chronicle.
     for (const p of healedParagons) {
-      if (p.gained > 0) {
+      if (p.isDead) {
+        UI.log(`<span class="actor-name">${p.def.name}</span> is revived with <span class="val">${p.currentHP}</span> HP at the rest spot.`, 'heal');
+      } else if (p.gained > 0) {
         UI.log(`<span class="actor-name">${p.def.name}</span> recovers <span class="val">${p.gained}</span> HP at the rest spot.`, 'heal');
       } else {
         UI.log(`<span class="actor-name">${p.def.name}</span> is already at full HP.`, 'heal');

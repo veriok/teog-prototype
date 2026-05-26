@@ -176,7 +176,7 @@ export const ResistanceKeyword = Object.freeze({
 
 // Numeric resistance value for each keyword.
 // Positive = damage reduced; negative = damage amplified.
-// Applied to the HP-hitting portion of damage AFTER armor mitigation.
+// Applied to the full effective damage AFTER armor DR but BEFORE distribution to armor/HP pools.
 export const RESISTANCE_VALUE = Object.freeze({
   [ResistanceKeyword.VULNERABLE]:     -0.25,
   [ResistanceKeyword.RESISTANT]:       0.25,

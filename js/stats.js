@@ -62,7 +62,8 @@ export function computeActorStats(actor) {
   actor.maxHP        = Math.round(s.hp);
   actor.currentHP    = Math.min(actor.currentHP, actor.maxHP);
   actor.maxArmor     = Math.round(s.armor);
-  actor.currentArmor = Math.min(actor.currentArmor, actor.maxArmor);
+  // Armor is never persisted between battles, so always restore to full after gear is applied.
+  actor.currentArmor = actor.maxArmor;
   actor.baseSpeed    = s.speed;
   actor.stats        = s;
 

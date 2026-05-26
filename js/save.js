@@ -9,7 +9,7 @@ export const Save = {
   // ── Default state ──────────────────────────────────────────────────────
   _default() {
     return {
-      version: 6,
+      version: 7,
       selectedLocationId: null,
       locationProgress: {
         flooded_cellars: {
@@ -92,6 +92,11 @@ export const Save = {
           }
         }
         parsed.version = 6;
+      }
+      // Migrate v6 → v7 (introduce paragon locking — reset to default-unlocked set)
+      if (parsed.version < 7) {
+        parsed.unlockedParagonIds = ['godefroy'];
+        parsed.version = 7;
       }
       return Object.assign(this._default(), parsed);
     } catch (e) {

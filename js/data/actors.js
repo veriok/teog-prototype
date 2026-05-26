@@ -3,58 +3,14 @@ import { DamageType, ResistanceKeyword } from '../enums.js';
 
 export const actors = {
 
-  aldric: {
-    id: 'aldric', name: 'Sir Aldric', role: 'Knight', icon: '🛡️',
-    portrait: 'assets/actors/aldric.png',
-    bio: 'A battle-hardened knight of the old order. Sworn to shield those who cannot shield themselves.',
-    subtype: 'paragon', row: 'front',
-    tags: ['humanoid'],
-    skillTypes: ['sword', 'shield', 'flood'],   // 3 base trees; TACTICS is the unlockable 4th
-    baseHP: 160, baseArmor: 80,
-    resource: { type: 'rage', max: 100, current: 0, regenPerSec: 0, decayPerSec: 2 },
-    globalSpeed: 1.0,
-    abilities: [
-      { abilityId: 'sword_slash',    rank: 1 },
-      { abilityId: 'rend',           rank: 1 },
-      { abilityId: 'shield_bash',    rank: 1 },
-      { abilityId: 'fortify',        rank: 1 },
-      { abilityId: 'wave_strike',    rank: 1 },
-      { abilityId: 'tide_surge',     rank: 1 },
-      { abilityId: 'drowning_grasp', rank: 1 },
-      { abilityId: 'tidal_wave',     rank: 1 },
-    ]
-  },
-
-  ysolde: {
-    id: 'ysolde', name: 'Ysolde', role: 'Mage', icon: '🔮',
-    portrait: 'assets/actors/ysolde.png',
-    bio: 'A scholar of the void arts. She studies destruction with the calm of someone who has already seen the end.',
-    subtype: 'paragon', row: 'back',
-    tags: ['humanoid'],
-    skillTypes: ['staff', 'fire', 'void'],       // 3 base trees
-    baseHP: 95, baseArmor: 30,
-    resource: { type: 'energy', max: 100, current: 100, regenPerSec: 8, decayPerSec: 0 },
-    globalSpeed: 1.0,
-    abilities: [
-      { abilityId: 'ember_shot',    rank: 1 },
-      { abilityId: 'fireball',      rank: 1 },
-      { abilityId: 'void_bolt',     rank: 1 },
-      { abilityId: 'entropy_field', rank: 1 },
-      { abilityId: 'staff_strike',  rank: 1 },
-      { abilityId: 'crushing_blow', rank: 1 },
-      { abilityId: 'stalwart_guard',rank: 1 },
-      { abilityId: 'sweeping_arc',  rank: 1 },
-    ]
-  },
-
   drowned_soldier_1: {
     id: 'drowned_soldier_1', name: 'Drowned Soldier', role: 'Infantry', icon: '💀',
     portrait: 'assets/actors/drowned_soldier.png',
     subtype: 'enemy', row: 'front',
     tags: ['undead', 'humanoid'],
-    baseHP: 85, baseArmor: 40,
+    baseHP: 60, baseArmor: 30,
     resource: { type: 'threat', max: 100, current: 0 },
-    globalSpeed: 0.85,
+    globalSpeed: 0.90,
     abilities: [
       { abilityId: 'heavy_swing', rank: 1 },
       { abilityId: 'bash',        rank: 1 },
@@ -69,7 +25,7 @@ export const actors = {
       name: 'Desperate Flail', icon: '💥',
       execute(caster, targets) {
         const t = targets[Math.floor(Math.random() * targets.length)];
-        return [{ type: 'damage', target: t, amount: 35, damageType: 'bludgeoning', ignoresGuard: true, source: 'Desperate Flail' }];
+        return [{ type: 'damage', target: t, amount: 25, damageType: 'bludgeoning', ignoresGuard: true, source: 'Desperate Flail' }];
       }
     },
     dropTable: [
@@ -83,9 +39,9 @@ export const actors = {
     portrait: 'assets/actors/drowned_soldier.png',
     subtype: 'enemy', row: 'front',
     tags: ['undead', 'humanoid'],
-    baseHP: 85, baseArmor: 40,
+    baseHP: 60, baseArmor: 30,
     resource: { type: 'threat', max: 100, current: 0 },
-    globalSpeed: 0.85,
+    globalSpeed: 0.90,
     abilities: [
       { abilityId: 'heavy_swing', rank: 1 },
       { abilityId: 'bash',        rank: 1 },
@@ -100,7 +56,7 @@ export const actors = {
       name: 'Desperate Flail', icon: '💥',
       execute(caster, targets) {
         const t = targets[Math.floor(Math.random() * targets.length)];
-        return [{ type: 'damage', target: t, amount: 35, damageType: 'bludgeoning', ignoresGuard: true, source: 'Desperate Flail' }];
+        return [{ type: 'damage', target: t, amount: 25, damageType: 'bludgeoning', ignoresGuard: true, source: 'Desperate Flail' }];
       }
     },
     dropTable: [
@@ -114,9 +70,9 @@ export const actors = {
     portrait: 'assets/actors/siege_crossbowman.png',
     subtype: 'enemy', row: 'back',
     tags: ['undead', 'humanoid'],
-    baseHP: 55, baseArmor: 15,
+    baseHP: 50, baseArmor: 25,
     resource: { type: 'threat', max: 100, current: 0 },
-    globalSpeed: 1.05,
+    globalSpeed: 1.00,
     abilities: [
       { abilityId: 'bolt_shot',        rank: 1 },
       { abilityId: 'suppressing_fire', rank: 1 },
@@ -131,7 +87,7 @@ export const actors = {
       name: 'Headshot', icon: '🎯',
       execute(caster, targets) {
         const t = targets[Math.floor(Math.random() * targets.length)];
-        const effects = [{ type: 'damage', target: t, amount: 40, damageType: 'piercing', source: 'Headshot' }];
+        const effects = [{ type: 'damage', target: t, amount: 35, damageType: 'piercing', source: 'Headshot' }];
         if (Math.random() < 0.5) effects.push({ type: 'apply_status', target: t, statusId: 'stun', stacks: 1, duration: 1.0 });
         return effects;
       }
@@ -146,7 +102,7 @@ export const actors = {
     portrait: 'assets/actors/siege_warden.png',
     subtype: 'enemy', subclass: 'elite', row: 'front', levelAdjustment: 1,
     tags: ['undead', 'humanoid'],
-    baseHP: 180, baseArmor: 90,
+    baseHP: 80, baseArmor: 45,
     resource: { type: 'threat', max: 100, current: 0 },
     globalSpeed: 0.80,
     abilities: [
@@ -165,7 +121,7 @@ export const actors = {
       execute(caster, targets) {
         const maxHpTarget = targets.reduce((a, b) => a.currentHP > b.currentHP ? a : b);
         return [
-          { type: 'damage', target: maxHpTarget, amount: 60, damageType: 'bludgeoning', source: "Warden's Wrath" },
+          { type: 'damage', target: maxHpTarget, amount: 45, damageType: 'bludgeoning', source: "Warden's Wrath" },
           ...targets.map(t => ({ type: 'apply_status', target: t, statusId: 'slow', stacks: 2, duration: 4 }))
         ];
       }
@@ -180,7 +136,7 @@ export const actors = {
     portrait: 'assets/actors/drowned_sergeant.png',
     subtype: 'enemy', subclass: 'boss', row: 'front', levelAdjustment: 2,
     tags: ['undead', 'humanoid'],
-    baseHP: 420, baseArmor: 120,
+    baseHP: 135, baseArmor: 60,
     resource: { type: 'threat', max: 100, current: 0 },
     globalSpeed: 0.90,
     abilities: [
@@ -203,7 +159,7 @@ export const actors = {
     specialAttack: {
       name: 'Rising Tide', icon: '🌊', isPhaseTransition: true,
       execute(caster, targets) {
-        const effects = targets.map(t => ({ type: 'damage', target: t, amount: 45, damageType: 'bludgeoning', source: 'Rising Tide' }));
+        const effects = targets.map(t => ({ type: 'damage', target: t, amount: 35, damageType: 'bludgeoning', source: 'Rising Tide' }));
         targets.forEach(t => effects.push({ type: 'apply_status', target: t, statusId: 'bleeding', stacks: 2, duration: 8 }));
         effects.push({ type: 'restore_armor', target: caster, amount: 60 });
         return effects;
@@ -216,7 +172,7 @@ export const actors = {
     phase2SpecialAttack: {
       name: 'The Deep Takes All', icon: '🌑',
       execute(caster, targets) {
-        const effects = targets.map(t => ({ type: 'damage', target: t, amount: 70, damageType: 'true', source: 'The Deep Takes All' }));
+        const effects = targets.map(t => ({ type: 'damage', target: t, amount: 50, damageType: 'true', source: 'The Deep Takes All' }));
         targets.forEach(t => effects.push({ type: 'apply_status', target: t, statusId: 'slow', stacks: 3, duration: 6 }));
         return effects;
       }

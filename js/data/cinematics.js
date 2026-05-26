@@ -71,4 +71,45 @@ export const CINEMATICS = {
     ],
   },
 
+
+  // ── Paragon unlock: Lucile ────────────────────────────────────────────
+  'lucile_unlock': {
+    id: 'lucile_unlock',
+    scenes: [
+      {
+        type: 'image_caption',
+        image: 'assets/actors/lucile.png',
+        caption: 'In the courtyard, through the rain — a woman you do not recognise stands watching the gate. She carries a leather satchel and a lantern, and she does not look afraid.',
+        duration: 6000,
+        kenBurns: true,
+      },
+      {
+        type: 'title_card',
+        title: 'LUCILE',
+        subtitle: 'A new ally joins your cause.',
+        duration: 3000,
+      },
+    ],
+  },
+
+  // ── Paragon unlock: The Harrowed Saint ───────────────────────────────
+  'harrowed_saint_unlock': {
+    id: 'harrowed_saint_unlock',
+    scenes: [
+      {
+        type: 'image_caption',
+        image: 'assets/actors/harrowed_saint.png',
+        caption: 'He emerged from the ash and the quiet — not fleeing, not searching. Simply present, as the dead tend to be when something still holds them.',
+        duration: 6000,
+        kenBurns: true,
+      },
+      {
+        type: 'title_card',
+        title: 'THE HARROWED SAINT',
+        subtitle: 'He walks with the dead, and they do not protest.',
+        duration: 3000,
+      },
+    ],
+  },
+
 };
