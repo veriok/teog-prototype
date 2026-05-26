@@ -1,4 +1,5 @@
 // js/data/actors.js
+import { DamageType, ResistanceKeyword } from '../enums.js';
 
 export const actors = {
 
@@ -58,11 +59,17 @@ export const actors = {
       { abilityId: 'heavy_swing', rank: 1 },
       { abilityId: 'bash',        rank: 1 },
     ],
+    resistances: {
+      [DamageType.VOID]:        ResistanceKeyword.RESISTANT,
+      [DamageType.PIERCING]:    ResistanceKeyword.RESISTANT,
+      [DamageType.NATURE]:      ResistanceKeyword.VULNERABLE,
+      [DamageType.BLUDGEONING]: ResistanceKeyword.VULNERABLE,
+    },
     specialAttack: {
       name: 'Desperate Flail', icon: '💥',
       execute(caster, targets) {
         const t = targets[Math.floor(Math.random() * targets.length)];
-        return [{ type: 'damage', target: t, amount: 35, damageType: 'physical', ignoresGuard: true, source: 'Desperate Flail' }];
+        return [{ type: 'damage', target: t, amount: 35, damageType: 'bludgeoning', ignoresGuard: true, source: 'Desperate Flail' }];
       }
     },
     dropTable: [
@@ -83,11 +90,17 @@ export const actors = {
       { abilityId: 'heavy_swing', rank: 1 },
       { abilityId: 'bash',        rank: 1 },
     ],
+    resistances: {
+      [DamageType.VOID]:        ResistanceKeyword.RESISTANT,
+      [DamageType.PIERCING]:    ResistanceKeyword.RESISTANT,
+      [DamageType.NATURE]:      ResistanceKeyword.VULNERABLE,
+      [DamageType.BLUDGEONING]: ResistanceKeyword.VULNERABLE,
+    },
     specialAttack: {
       name: 'Desperate Flail', icon: '💥',
       execute(caster, targets) {
         const t = targets[Math.floor(Math.random() * targets.length)];
-        return [{ type: 'damage', target: t, amount: 35, damageType: 'physical', ignoresGuard: true, source: 'Desperate Flail' }];
+        return [{ type: 'damage', target: t, amount: 35, damageType: 'bludgeoning', ignoresGuard: true, source: 'Desperate Flail' }];
       }
     },
     dropTable: [
@@ -108,11 +121,17 @@ export const actors = {
       { abilityId: 'bolt_shot',        rank: 1 },
       { abilityId: 'suppressing_fire', rank: 1 },
     ],
+    resistances: {
+      [DamageType.VOID]:        ResistanceKeyword.RESISTANT,
+      [DamageType.PIERCING]:    ResistanceKeyword.RESISTANT,
+      [DamageType.NATURE]:      ResistanceKeyword.VULNERABLE,
+      [DamageType.BLUDGEONING]: ResistanceKeyword.VULNERABLE,
+    },
     specialAttack: {
       name: 'Headshot', icon: '🎯',
       execute(caster, targets) {
         const t = targets[Math.floor(Math.random() * targets.length)];
-        const effects = [{ type: 'damage', target: t, amount: 40, damageType: 'physical', source: 'Headshot' }];
+        const effects = [{ type: 'damage', target: t, amount: 40, damageType: 'piercing', source: 'Headshot' }];
         if (Math.random() < 0.5) effects.push({ type: 'apply_status', target: t, statusId: 'stun', stacks: 1, duration: 1.0 });
         return effects;
       }
@@ -135,12 +154,18 @@ export const actors = {
       { abilityId: 'shield_slam_enemy',rank: 1 },
       { abilityId: 'brace',            rank: 1 },
     ],
+    resistances: {
+      [DamageType.VOID]:        ResistanceKeyword.RESISTANT,
+      [DamageType.PIERCING]:    ResistanceKeyword.RESISTANT,
+      [DamageType.NATURE]:      ResistanceKeyword.VULNERABLE,
+      [DamageType.BLUDGEONING]: ResistanceKeyword.VULNERABLE,
+    },
     specialAttack: {
       name: "Warden's Wrath", icon: '🔨',
       execute(caster, targets) {
         const maxHpTarget = targets.reduce((a, b) => a.currentHP > b.currentHP ? a : b);
         return [
-          { type: 'damage', target: maxHpTarget, amount: 60, damageType: 'physical', source: "Warden's Wrath" },
+          { type: 'damage', target: maxHpTarget, amount: 60, damageType: 'bludgeoning', source: "Warden's Wrath" },
           ...targets.map(t => ({ type: 'apply_status', target: t, statusId: 'slow', stacks: 2, duration: 4 }))
         ];
       }
@@ -169,10 +194,16 @@ export const actors = {
       { abilityId: 'choking_grip',     rank: 1 },
       { abilityId: 'sergeants_will',   rank: 1 },
     ],
+    resistances: {
+      [DamageType.VOID]:        ResistanceKeyword.RESISTANT,
+      [DamageType.PIERCING]:    ResistanceKeyword.RESISTANT,
+      [DamageType.NATURE]:      ResistanceKeyword.VULNERABLE,
+      [DamageType.BLUDGEONING]: ResistanceKeyword.VULNERABLE,
+    },
     specialAttack: {
       name: 'Rising Tide', icon: '🌊', isPhaseTransition: true,
       execute(caster, targets) {
-        const effects = targets.map(t => ({ type: 'damage', target: t, amount: 45, damageType: 'physical', source: 'Rising Tide' }));
+        const effects = targets.map(t => ({ type: 'damage', target: t, amount: 45, damageType: 'bludgeoning', source: 'Rising Tide' }));
         targets.forEach(t => effects.push({ type: 'apply_status', target: t, statusId: 'bleeding', stacks: 2, duration: 8 }));
         effects.push({ type: 'restore_armor', target: caster, amount: 60 });
         return effects;

@@ -9,9 +9,9 @@ export const abilities = {
     id: 'sword_slash', name: 'Sword Slash', icon: '⚔️',
     tree: SkillType.SWORD, tags: [AbilityTag.MELEE],
     ranks: [
-      { rank: 1, cooldown: 2.5, cost: null, damage: 18, damageType: 'physical', levelRequired: 1, autoLearn: true },
-      { rank: 2, cooldown: 2.5, cost: null, damage: 26, damageType: 'physical', levelRequired: 4, autoLearn: true },
-      { rank: 3, cooldown: 2.3, cost: null, damage: 35, damageType: 'physical', levelRequired: 8, autoLearn: false },
+      { rank: 1, cooldown: 2.5, cost: null, damage: 18, damageType: 'slashing', levelRequired: 1, autoLearn: true },
+      { rank: 2, cooldown: 2.5, cost: null, damage: 26, damageType: 'slashing', levelRequired: 4, autoLearn: true },
+      { rank: 3, cooldown: 2.3, cost: null, damage: 35, damageType: 'slashing', levelRequired: 8, autoLearn: false },
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
@@ -30,7 +30,7 @@ export const abilities = {
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'slashing' },
         { type: 'apply_status', target: targets[0], statusId: 'bleeding', stacks: rank.stacks, duration: rank.duration }
       ];
     }
@@ -47,7 +47,7 @@ export const abilities = {
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
         { type: 'apply_status', target: targets[0], statusId: 'stun', stacks: 1, duration: rank.stunDuration }
       ];
     }
@@ -134,12 +134,15 @@ export const abilities = {
     ranks: [
       { rank: 1, cooldown: 3.0, cost: null, damage: 18,                               levelRequired: 1, autoLearn: true },
       { rank: 2, cooldown: 3.0, cost: null, damage: 25,                               levelRequired: 4, autoLearn: true },
-      { rank: 3, cooldown: 2.8, cost: null, damage: 34, slowStacks: 1, slowDuration: 3, levelRequired: 8, autoLearn: false },
+      { rank: 3, cooldown: 2.8, cost: null, damage: 34, slowStacks: 1, slowDuration: 3, voidExposeChance: 0.20, levelRequired: 8, autoLearn: false },
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
-      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'magic'}];
+      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'void' }];
       if (rank.slowStacks) effects.push({ type: 'apply_status', target: targets[0], statusId: 'slow', stacks: rank.slowStacks, duration: rank.slowDuration });
+      if (rank.voidExposeChance && Math.random() < rank.voidExposeChance) {
+        effects.push({ type: 'apply_status', target: targets[0], statusId: 'void_exposed', stacks: 1, duration: 8 });
+      }
       return effects;
     }
   },
@@ -174,7 +177,7 @@ export const abilities = {
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' }
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' }
       ];
     }
   },
@@ -190,7 +193,7 @@ export const abilities = {
     targeting: 'all_enemies',
     execute(caster, targets, rank) {
       return targets.flatMap(t => [
-        { type: 'damage', target: t, amount: rank.damage, damageType: 'physical' },
+        { type: 'damage', target: t, amount: rank.damage, damageType: 'bludgeoning' },
         { type: 'apply_status', target: t, statusId: 'slow', stacks: rank.slowStacks, duration: rank.slowDuration },
       ]);
     }
@@ -207,7 +210,7 @@ export const abilities = {
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
         { type: 'apply_status', target: targets[0], statusId: 'root', stacks: 1, duration: rank.rootDuration },
       ];
     }
@@ -224,7 +227,7 @@ export const abilities = {
     targeting: 'all_enemies',
     execute(caster, targets, rank) {
       return targets.flatMap(t => [
-        { type: 'damage', target: t, amount: rank.damage, damageType: 'magic' },
+        { type: 'damage', target: t, amount: rank.damage, damageType: 'bludgeoning' },
         { type: 'apply_status', target: t, statusId: 'armor_shred', stacks: rank.shredStacks, duration: 12 },
       ]);
     }
@@ -235,9 +238,9 @@ export const abilities = {
     id: 'staff_strike', name: 'Staff Strike', icon: '🪄',
     tree: SkillType.STAFF, tags: [AbilityTag.MELEE],
     ranks: [
-      { rank: 1, cooldown: 2.2, cost: null, damage: 14, damageType: 'physical', levelRequired: 1,  autoLearn: true },
-      { rank: 2, cooldown: 2.0, cost: null, damage: 20, damageType: 'physical', levelRequired: 5,  autoLearn: true },
-      { rank: 3, cooldown: 1.8, cost: null, damage: 28, damageType: 'physical', levelRequired: 10, autoLearn: true },
+      { rank: 1, cooldown: 2.2, cost: null, damage: 14, damageType: 'bludgeoning', levelRequired: 1,  autoLearn: true },
+      { rank: 2, cooldown: 2.0, cost: null, damage: 20, damageType: 'bludgeoning', levelRequired: 5,  autoLearn: true },
+      { rank: 3, cooldown: 1.8, cost: null, damage: 28, damageType: 'bludgeoning', levelRequired: 10, autoLearn: true },
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
@@ -256,7 +259,7 @@ export const abilities = {
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
         { type: 'apply_status', target: targets[0], statusId: 'stun', stacks: 1, duration: rank.stunDuration },
       ];
     }
@@ -289,7 +292,7 @@ export const abilities = {
     ],
     targeting: 'all_player_front',
     execute(caster, targets, rank) {
-      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'physical' }));
+      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'bludgeoning' }));
     }
   },
 
@@ -300,7 +303,7 @@ export const abilities = {
     ranks: [{ rank: 1, cooldown: 3.2, cost: null, damage: 22, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' }];
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'slashing' }];
     }
   },
 
@@ -311,7 +314,7 @@ export const abilities = {
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
         { type: 'apply_status', target: targets[0], statusId: 'stun', stacks: 1, duration: rank.stunDuration }
       ];
     }
@@ -323,7 +326,7 @@ export const abilities = {
     ranks: [{ rank: 1, cooldown: 2.8, cost: null, damage: 18, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_any',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' }];
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'piercing' }];
     }
   },
 
@@ -333,7 +336,7 @@ export const abilities = {
     ranks: [{ rank: 1, cooldown: 9.0, cost: null, damage: 10, levelRequired: 1, autoLearn: true }],
     targeting: 'all_player_front',
     execute(caster, targets, rank) {
-      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'physical' }));
+      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'piercing' }));
     }
   },
 
@@ -344,7 +347,7 @@ export const abilities = {
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'piercing' },
         { type: 'apply_status', target: targets[0], statusId: 'bleeding', stacks: 1, duration: 6 }
       ];
     }
@@ -356,7 +359,7 @@ export const abilities = {
     ranks: [{ rank: 1, cooldown: 5.0, cost: null, damage: 5, levelRequired: 1, autoLearn: true }],
     targeting: 'all_player_front',
     execute(caster, targets, rank) {
-      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'physical' }));
+      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'piercing' }));
     }
   },
 
@@ -367,7 +370,7 @@ export const abilities = {
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
         { type: 'apply_status', target: targets[0], statusId: 'stun', stacks: 1, duration: rank.stunDuration }
       ];
     }
@@ -380,7 +383,7 @@ export const abilities = {
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
         { type: 'apply_status', target: caster, statusId: 'guard', stacks: rank.guardStacks, duration: 12 }
       ];
     }
@@ -408,7 +411,7 @@ export const abilities = {
     ],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' }];
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'slashing' }];
     }
   },
 
@@ -433,7 +436,7 @@ export const abilities = {
     targeting: 'single_player_any',
     execute(caster, targets, rank) {
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'physical' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
         { type: 'apply_status', target: targets[0], statusId: 'root', stacks: 1, duration: rank.rootDuration }
       ];
     }

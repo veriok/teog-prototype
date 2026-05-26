@@ -5,6 +5,7 @@ import { UI }             from './ui.js';
 import { EquippedItems }  from './inventory.js';
 import { equipActorItems } from './loot.js';
 import { computeActorStats, getRankForLevel, scaleActorByLevel } from './stats.js';
+import { DAMAGE_UMBRELLA, RESISTANCE_VALUE } from './enums.js';
 
 const TICK = 0.1; // seconds per tick
 
@@ -80,9 +81,39 @@ export class ActorRuntime {
     // Combat refresh cooldown
     this.combatRefreshCD = 0;
 
+    // Resistances — keyword map copied from definition so it can be mutated at runtime
+    // (e.g. by ability effects or future item mods). Missing key = NORMAL (×1.0 damage).
+    this.resistances = def.resistances ? { ...def.resistances } : {};
+
     // Flags
     this.isDead      = false;
     this.isActing    = false; // prevents re-queue in same tick
+  }
+
+  // ── Resistance helper ─────────────────────────────────────────────────
+  // Returns the effective numeric resistance for a given damage type,
+  // combining the actor's base resistance map with any active status mods.
+  // Positive = damage reduced; negative = damage amplified.
+  // High end is capped at 1.5 (IMMUNE ceiling). Low end is unclamped.
+  getEffectiveResistance(damageType) {
+    // 1. Specific type first, then umbrella category fallback
+    let keyword = this.resistances[damageType];
+    if (keyword == null) {
+      const umbrella = DAMAGE_UMBRELLA[damageType];
+      if (umbrella != null) keyword = this.resistances[umbrella];
+    }
+    let resistVal = keyword != null ? (RESISTANCE_VALUE[keyword] ?? 0) : 0;
+
+    // 2. Add status-based resistance mods (e.g. void_exposed)
+    for (const [statusId, entry] of this.statuses) {
+      const def = DATA.statuses[statusId];
+      if (!def?.resistanceMod) continue;
+      const mod = def.resistanceMod[damageType];
+      if (mod != null) resistVal += mod * entry.stacks;
+    }
+
+    // 3. Cap at 1.5 (IMMUNE); no floor clamp — vulnerabilities can stack freely
+    return Math.min(1.5, resistVal);
   }
 
   // ── Computed GlobalSpeed ──────────────────────────────────────────────
@@ -446,9 +477,9 @@ export class BattleEngine {
 
       case 'damage': {
         let raw = effect.amount;
-        const dtype = effect.damageType || 'physical';
+        const dtype = effect.damageType || 'slashing';
 
-        // Guard absorption (before armor)
+        // Guard absorption (before everything else, for all damage types)
         if (!effect.ignoresGuard && target.hasStatus('guard')) {
           const guardEntry = target.getStatus('guard');
           if (guardEntry && guardEntry.stacks > 0) {
@@ -466,51 +497,57 @@ export class BattleEngine {
           }
         }
 
-        // Compute mitigation
-        let mitigation = 0;
-        if (dtype === 'physical') {
-          mitigation = Math.floor(target.effectiveArmor() / 25);
-        } else if (dtype === 'magic' || dtype === 'fire') {
-          mitigation = Math.floor(target.effectiveArmor() / 50); // half mitigation
-        } else if (dtype === 'acid') {
-          mitigation = 0; // hits armor directly, skip to armor damage
-        }
-        // True damage: no mitigation, no armor
+        // TRUE damage: bypasses armor DR and resistance entirely
         if (dtype === 'true') {
           target.currentHP -= raw;
           this.log(`<span class="actor-name">${target.name}</span> takes <span class="val">${raw}</span> true damage${sourceName ? ` from <span class="ability-name">${sourceName}</span>` : ''}.`, 'damage');
           UI.floatText(target, `-${raw}`, 'damage');
-          // Threat gain on damage taken
           this._addThreat(target, raw);
           return;
         }
 
-        // Armor pierce modifier
-        if (effect.armorPierce) mitigation = Math.floor(mitigation * (1 - effect.armorPierce));
-
-        const effective = Math.max(0, raw - mitigation);
-
-        if (dtype === 'acid') {
-          // Acid: hits armor pool directly
-          const armorDmg = Math.min(target.currentArmor, effective);
-          target.currentArmor -= armorDmg;
-          this.log(`<span class="actor-name">${target.name}</span>'s armor corrodes for <span class="val">${armorDmg}</span>.`, 'damage');
-          UI.floatText(target, `-${armorDmg}`, 'armor');
-        } else {
-          const armorDmg = Math.min(target.currentArmor, effective);
-          const hpDmg    = effective - armorDmg;
-          target.currentArmor -= armorDmg;
-          target.currentHP    -= hpDmg;
-          const totalShown = armorDmg + hpDmg;
-          if (totalShown > 0) {
-            const logType = dtype === 'fire' ? 'damage' : 'damage';
-            this.log(`<span class="actor-name">${target.name}</span> takes <span class="val">${effective}</span> ${dtype} damage${armorDmg > 0 ? ` (${armorDmg} to armor)` : ''}${sourceName ? ` from <span class="ability-name">${sourceName}</span>` : ''}.`, logType);
-            UI.floatText(target, `-${effective}`, 'damage');
+        // armorDamage keyword: pre-reduce armor BEFORE DR calculation so the hit
+        // benefits from the weakened armor (lower DR + smaller armor buffer).
+        if (effect.armorDamage > 0) {
+          const aDmg = Math.min(target.currentArmor, effect.armorDamage);
+          target.currentArmor -= aDmg;
+          if (aDmg > 0) {
+            this.log(`<span class="actor-name">${target.name}</span>'s armor corrodes for <span class="val">${aDmg}</span>.`, 'damage');
+            UI.floatText(target, `-${aDmg}`, 'armor');
           }
         }
 
+        // Armor DR — uniform for all damage types: 1 DR per 25 current armor
+        const basedr = Math.floor(target.effectiveArmor() / 25);
+        const dr     = effect.armorPierce ? Math.floor(basedr * (1 - effect.armorPierce)) : basedr;
+        const effective = Math.max(0, raw - dr);
+
+        // Distribute between armor pool and HP
+        const armorHit = Math.min(target.currentArmor, effective);
+        let   hpHit    = effective - armorHit;
+
+        // Resistance — applied LAST, to the HP-hitting portion only
+        const resistVal = target.getEffectiveResistance(dtype);
+        if (resistVal >= 1.5) {
+          // Fully immune — skip damage entirely
+          this.log(`<span class="actor-name">${target.name}</span> is immune to ${dtype} damage.`, 'status');
+          UI.flashCard(target, 'hit-flash');
+          return;
+        }
+        hpHit = Math.max(0, Math.round(hpHit * (1 - resistVal)));
+
+        // Apply
+        target.currentArmor -= armorHit;
+        target.currentHP    -= hpHit;
+
+        const totalShown = armorHit + hpHit;
+        if (totalShown > 0) {
+          this.log(`<span class="actor-name">${target.name}</span> takes <span class="val">${totalShown}</span> ${dtype} damage${armorHit > 0 ? ` (${armorHit} to armor)` : ''}${sourceName ? ` from <span class="ability-name">${sourceName}</span>` : ''}.`, 'damage');
+          UI.floatText(target, `-${totalShown}`, 'damage');
+        }
+
         UI.flashCard(target, 'hit-flash');
-        this._addThreat(target, effective);
+        this._addThreat(target, totalShown);
         break;
       }
 

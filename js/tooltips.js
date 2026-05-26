@@ -3,6 +3,8 @@
 // Singleton that owns the single tooltip <div>, cursor tracking, and all
 // HTML builders.  Import Tooltips wherever hover tooltips are needed.
 
+import { DamageType } from './enums.js';
+
 // ── Stat metadata (for the Stats sub-tab tooltips) ───────────────────────
 
 const STAT_NAMES = {
@@ -139,6 +141,36 @@ export const Tooltips = {
     if (!name && !desc) return;
     let html = `<strong>${name ?? statKey}</strong>`;
     if (desc) html += `<div style="max-width:200px;margin-top:4px;font-size:0.76rem;color:var(--text-parchment);line-height:1.45">${desc}</div>`;
+    this.showRaw(html, e);
+  },
+
+  // ── Resistance tooltip ────────────────────────────────────────────────────
+  // Shows a formatted breakdown of the actor's current resistances/vulnerabilities.
+  showResistances(e, actor) {
+    const ALL_TYPES = [
+      DamageType.SLASHING, DamageType.PIERCING, DamageType.BLUDGEONING,
+      DamageType.FIRE, DamageType.COLD, DamageType.LIGHTNING,
+      DamageType.VOID, DamageType.ARCANA, DamageType.NATURE, DamageType.DECAY,
+    ];
+    const rows = [];
+    for (const dtype of ALL_TYPES) {
+      const val = actor.getEffectiveResistance(dtype);
+      let keyword, cssClass;
+      if (val >= 1.5) { keyword = 'Immune';        cssClass = 'resist-immune'; }
+      else if (val >= 0.75) { keyword = 'Near Immune';   cssClass = 'resist-near-immune'; }
+      else if (val >= 0.50) { keyword = 'Very Resistant'; cssClass = 'resist-very-resistant'; }
+      else if (val >= 0.25) { keyword = 'Resistant';     cssClass = 'resist-resistant'; }
+      else if (val < 0)     { keyword = 'Vulnerable';    cssClass = 'resist-vulnerable'; }
+      else continue; // normal (0..0.25 exclusive) — skip
+      const label = dtype.charAt(0).toUpperCase() + dtype.slice(1);
+      rows.push(`<div class="resist-row"><span class="resist-type">${label}</span><span class="${cssClass}">${keyword}</span></div>`);
+    }
+    let html = `<strong>\ud83d\udee1 Resistances</strong>`;
+    if (rows.length === 0) {
+      html += `<div style="color:var(--text-dim);font-size:0.73rem;margin-top:4px">No special resistances.</div>`;
+    } else {
+      html += `<div class="tt-divider"></div>${rows.join('')}`;
+    }
     this.showRaw(html, e);
   },
 

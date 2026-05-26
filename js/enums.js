@@ -124,3 +124,63 @@ export const RARITY_VALUE_MULTIPLIER = Object.freeze({
   [Rarity.RARE]:      3.0,
   [Rarity.LEGENDARY]: 5.0,
 });
+
+// ── Damage types ──────────────────────────────────────────────────────────────
+// Specific leaf types used in ability effects, actor resistances, and status mods.
+export const DamageType = Object.freeze({
+  // Physical subtypes
+  SLASHING:    'slashing',
+  PIERCING:    'piercing',
+  BLUDGEONING: 'bludgeoning',
+  // Elemental subtypes
+  FIRE:        'fire',
+  COLD:        'cold',
+  LIGHTNING:   'lightning',
+  // Magical / other
+  VOID:        'void',
+  ARCANA:      'arcana',
+  NATURE:      'nature',
+  DECAY:       'decay',
+  // Special — bypasses armor and resistance entirely
+  TRUE:        'true',
+});
+
+// Umbrella categories used for resistance fallback lookup.
+export const DAMAGE_CATEGORY = Object.freeze({
+  PHYSICAL:  'physical',   // covers slashing / piercing / bludgeoning
+  ELEMENTAL: 'elemental',  // covers fire / cold / lightning
+  // void / arcana / nature / decay have no umbrella
+});
+
+// Maps each leaf DamageType to its umbrella category (if any).
+// Used so an actor with { [DAMAGE_CATEGORY.PHYSICAL]: RESISTANT } resists all three physical subtypes.
+export const DAMAGE_UMBRELLA = Object.freeze({
+  [DamageType.SLASHING]:    DAMAGE_CATEGORY.PHYSICAL,
+  [DamageType.PIERCING]:    DAMAGE_CATEGORY.PHYSICAL,
+  [DamageType.BLUDGEONING]: DAMAGE_CATEGORY.PHYSICAL,
+  [DamageType.FIRE]:        DAMAGE_CATEGORY.ELEMENTAL,
+  [DamageType.COLD]:        DAMAGE_CATEGORY.ELEMENTAL,
+  [DamageType.LIGHTNING]:   DAMAGE_CATEGORY.ELEMENTAL,
+});
+
+// ── Resistance keywords ───────────────────────────────────────────────────────
+// NORMAL is intentionally absent — a missing entry always means normal (×1.0 damage).
+// Keywords are used in actor definitions; numbers are used for computation.
+export const ResistanceKeyword = Object.freeze({
+  VULNERABLE:     'vulnerable',      // takes more damage (stored as −0.25; can stack lower)
+  RESISTANT:      'resistant',       // −25 % damage
+  VERY_RESISTANT: 'very_resistant',  // −50 % damage
+  NEAR_IMMUNE:    'near_immune',     // −75 % damage
+  IMMUNE:         'immune',          // stored as 1.5 — requires 6 × 25 %-shred stacks to break
+});
+
+// Numeric resistance value for each keyword.
+// Positive = damage reduced; negative = damage amplified.
+// Applied to the HP-hitting portion of damage AFTER armor mitigation.
+export const RESISTANCE_VALUE = Object.freeze({
+  [ResistanceKeyword.VULNERABLE]:     -0.25,
+  [ResistanceKeyword.RESISTANT]:       0.25,
+  [ResistanceKeyword.VERY_RESISTANT]:  0.50,
+  [ResistanceKeyword.NEAR_IMMUNE]:     0.75,
+  [ResistanceKeyword.IMMUNE]:          1.50,
+});

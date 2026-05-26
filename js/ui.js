@@ -82,9 +82,11 @@ export const UI = {
 
     card.innerHTML = `
       <div class="card-header">
-        ${portraitHTML}
+        <div class="card-portrait-wrap">
+          ${portraitHTML}
+        </div>
         <div class="card-info">
-          <div class="card-name">${actor.name}</div>
+          <div class="card-name">${actor.name}<span class="resist-indicator" title="">🛡</span></div>
           <div class="card-role">${tagLine}</div>
           <div class="card-level">${actor.subtype === 'paragon' ? 'Paragon' : (actor.subclass === 'boss' ? `☠ BOSS &middot; Lv.${actor.level}` : actor.subclass === 'elite' ? `★ ELITE &middot; Lv.${actor.level}` : `Lv.${actor.level}`)}</div>
         </div>
@@ -130,6 +132,13 @@ export const UI = {
 
     // Death event: card owns its own dead-state transition
     card.addEventListener('actor:died', () => card.classList.add('dead'));
+
+    // Resistance indicator hover
+    const resistIndicator = card.querySelector('.resist-indicator');
+    if (resistIndicator) {
+      resistIndicator.addEventListener('mouseenter', e => Tooltips.showResistances(e, actor));
+      resistIndicator.addEventListener('mouseleave', () => Tooltips.hide());
+    }
 
     // Build ability icons
     this._buildAbilityIcons(card, actor);

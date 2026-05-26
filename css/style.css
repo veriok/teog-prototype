@@ -971,6 +971,40 @@ body {
 .tooltip .tt-res { color: var(--resource-energy); }
 .tooltip .tt-tags { display: flex; flex-wrap: wrap; gap: 3px; margin: 2px 0 4px; }
 
+/* ── Resistance indicator (shield badge on actor cards) ──────────────────── */
+.card-portrait-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.resist-indicator {
+  display: inline-block;
+  font-size: 0.72rem;
+  cursor: pointer;
+  opacity: 0.55;
+  margin-left: 4px;
+  vertical-align: middle;
+  user-select: none;
+  transition: opacity 0.15s;
+}
+.resist-indicator:hover { opacity: 1; }
+
+/* ── Resistance tooltip rows ─────────────────────────────────────────────── */
+.resist-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 1px 0;
+  font-size: 0.76rem;
+}
+.resist-type { color: var(--text-parchment); }
+.resist-vulnerable    { color: #e05050; font-weight: 600; }
+.resist-resistant     { color: #5bc85b; font-weight: 600; }
+.resist-very-resistant{ color: #3de63d; font-weight: 700; }
+.resist-near-immune   { color: #8888ff; font-weight: 700; }
+.resist-immune        { color: #ffffff; font-weight: 700; letter-spacing: 0.02em; }
+
 /* ── Floating damage text ────────────────────────────────────────────────── */
 .float-text {
   position: fixed;

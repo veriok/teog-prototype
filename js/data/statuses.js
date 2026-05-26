@@ -1,4 +1,5 @@
 // js/data/statuses.js
+import { DamageType } from '../enums.js';
 
 export const statuses = {
   bleeding: {
@@ -6,8 +7,8 @@ export const statuses = {
     cssClass: 'status-bleeding',
     stackMode: 'stack', maxStacks: 5,
     tickInterval: 1.0,
-    tickEffect: (actor, stacks) => ({ type: 'damage', amount: 3 * stacks, damageType: 'physical', source: 'Bleeding' }),
-    tooltip: 'Deals 3 physical damage per stack each second.'
+    tickEffect: (actor, stacks) => ({ type: 'damage', amount: 3 * stacks, damageType: 'slashing', source: 'Bleeding' }),
+    tooltip: 'Deals 3 slashing damage per stack each second.'
   },
   burning: {
     id: 'burning', label: 'Burn', icon: '🔥',
@@ -67,5 +68,13 @@ export const statuses = {
     // target must be set explicitly so _applyEffect can resolve it
     tickEffect: (actor, stacks) => ({ type: 'heal', target: actor, amount: stacks * 4, source: 'Regeneration' }),
     tooltip: 'Restores 4 HP per stack each second. Stripped immediately when combat ends.',
+  },
+
+  void_exposed: {
+    id: 'void_exposed', label: 'Void Exposed', icon: '🌑',
+    cssClass: 'status-void_exposed',
+    stackMode: 'stack', maxStacks: 3,
+    resistanceMod: { [DamageType.VOID]: -0.12 },
+    tooltip: 'Reduces Void resistance by 12% per stack (max 3 stacks = −36%).',
   },
 };
