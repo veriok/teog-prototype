@@ -509,7 +509,7 @@ const Game = {
         );
         if (totalXp <= 0) { xpLines.push(`${tree}: +0 XP`); continue; }
 
-        const { newLevel, levelsGained, rankUps } =
+        const { newLevel, levelsGained, rankUps, newAbilities } =
           processSkillXp(ps, tree, totalXp, paragon.defId, def);
 
         xpLines.push(`${tree}: +${totalXp} XP`);
@@ -523,6 +523,22 @@ const Game = {
           for (const { abilityId, newRank } of rankUps) {
             const abName = DATA.abilities[abilityId]?.name ?? abilityId;
             UI.log(`  ${abName} advanced to Rank ${newRank}.`, 'system');
+          }
+          // Auto-learn newly unlocked abilities and slot them if space allows.
+          if (!ps.skillAbilitySlots)       ps.skillAbilitySlots = {};
+          if (!ps.skillAbilitySlots[tree]) ps.skillAbilitySlots[tree] = [null, null, null, null];
+          for (const abilityId of newAbilities) {
+            const abDef = DATA.abilities[abilityId];
+            if (!abDef) continue;
+            const slots    = ps.skillAbilitySlots[tree];
+            if (slots.includes(abilityId)) continue; // already slotted
+            const emptyIdx = slots.findIndex(s => s === null);
+            if (emptyIdx !== -1) {
+              slots[emptyIdx] = abilityId;
+              UI.log(`  ${paragon.name} learned ${abDef.name}! (auto-slotted to slot ${emptyIdx + 1})`, 'system');
+            } else {
+              UI.log(`  ${paragon.name} learned ${abDef.name}! (No empty slot — assign manually in Paragons.)`, 'system');
+            }
           }
         }
       }

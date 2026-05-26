@@ -32,22 +32,41 @@ export function getCurrentAbilityRank(abilityDef, skillLevel) {
 }
 
 // ── checkAbilityRankUps ────────────────────────────────────────────────────
-// Compares the rank each autoLearn ability in `skillType` would have at
-// `prevLevel` vs `newLevel`. Returns an array of { abilityId, newRank } for
-// abilities whose rank increased — so the caller can log them.
+// Scans ALL abilities in DATA for `skillType` and returns { abilityId, newRank }
+// for any that were already known at prevLevel (rank-1 levelRequired ≤ prevLevel)
+// and whose autoLearn rank advances when moving to newLevel.
 //
-// paragonDef — actor definition object (from DATA.actors)
 // skillType  — SkillType value
 // prevLevel  — the skill level before the level-up(s)
 // newLevel   — the skill level after the level-up(s)
-export function checkAbilityRankUps(paragonDef, skillType, prevLevel, newLevel) {
+export function checkAbilityRankUps(skillType, prevLevel, newLevel) {
   const results = [];
-  for (const { abilityId } of (paragonDef?.abilities ?? [])) {
-    const abDef = DATA.abilities[abilityId];
-    if (!abDef || abDef.tree !== skillType) continue;
+  for (const abDef of Object.values(DATA.abilities)) {
+    if (abDef.tree !== skillType) continue;
+    // Only abilities already known at prevLevel (rank-1 levelRequired ≤ prevLevel)
+    if ((abDef.ranks?.[0]?.levelRequired ?? 1) > prevLevel) continue;
     const before = getCurrentAbilityRank(abDef, prevLevel);
     const after  = getCurrentAbilityRank(abDef, newLevel);
-    if (after > before) results.push({ abilityId, newRank: after });
+    if (after > before) results.push({ abilityId: abDef.id, newRank: after });
+  }
+  return results;
+}
+
+// ── checkNewAbilityUnlocks ────────────────────────────────────────────────────
+// Scans ALL abilities in DATA for `skillType` and returns the ability IDs that
+// first become learnable when skill level moves from prevLevel to newLevel.
+// An ability is newly learnable when its rank-1 levelRequired falls in the
+// half-open interval (prevLevel, newLevel] AND rank-1 autoLearn is not false.
+export function checkNewAbilityUnlocks(skillType, prevLevel, newLevel) {
+  const results = [];
+  for (const abDef of Object.values(DATA.abilities)) {
+    if (abDef.tree !== skillType) continue;
+    const firstRank = abDef.ranks?.[0];
+    if (!firstRank) continue;
+    const firstLevel = firstRank.levelRequired ?? 1;
+    if (firstLevel > prevLevel && firstLevel <= newLevel && firstRank.autoLearn !== false) {
+      results.push(abDef.id);
+    }
   }
   return results;
 }
@@ -66,12 +85,13 @@ export function checkAbilityRankUps(paragonDef, skillType, prevLevel, newLevel) 
 // paragonId    — string id used in the dispatched event detail
 // paragonDef   — actor definition object (used for rank-up checks)
 export function processSkillXp(paragonState, skillType, xpGain, paragonId, paragonDef) {
-  if (xpGain <= 0) return { newLevel: paragonState.skillLevels[skillType] ?? 1, levelsGained: 0, rankUps: [] };
+  if (xpGain <= 0) return { newLevel: paragonState.skillLevels[skillType] ?? 1, levelsGained: 0, rankUps: [], newAbilities: [] };
 
-  let level      = paragonState.skillLevels[skillType] ?? 1;
-  let xp         = (paragonState.skillXP[skillType]    ?? 0) + xpGain;
-  const prevLevel = level;
-  const rankUps  = [];
+  let level       = paragonState.skillLevels[skillType] ?? 1;
+  let xp          = (paragonState.skillXP[skillType]    ?? 0) + xpGain;
+  const prevLevel  = level;
+  const rankUps    = [];
+  const newAbilities = [];
 
   while (level < SKILL_LEVEL_MAX) {
     const needed = XP_PER_LEVEL[level];
@@ -79,9 +99,11 @@ export function processSkillXp(paragonState, skillType, xpGain, paragonId, parag
     xp -= needed;
     level++;
 
-    // Collect rank-ups for this level step.
-    const ups = checkAbilityRankUps(paragonDef, skillType, level - 1, level);
-    rankUps.push(...ups);
+    // Rank-ups: abilities already known whose autoLearn rank advances.
+    rankUps.push(...checkAbilityRankUps(skillType, level - 1, level));
+
+    // New unlocks: abilities whose rank-1 level requirement is just met.
+    newAbilities.push(...checkNewAbilityUnlocks(skillType, level - 1, level));
 
     document.dispatchEvent(new CustomEvent('skillLevelUp', {
       detail: { paragonId, skillType, newLevel: level }
@@ -94,6 +116,6 @@ export function processSkillXp(paragonState, skillType, xpGain, paragonId, parag
   paragonState.skillLevels[skillType] = level;
   paragonState.skillXP[skillType]     = xp;
 
-  return { newLevel: level, levelsGained: level - prevLevel, rankUps };
+  return { newLevel: level, levelsGained: level - prevLevel, rankUps, newAbilities };
 }
 
