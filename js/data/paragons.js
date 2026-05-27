@@ -20,7 +20,7 @@ export const paragons = {
     tags: ['humanoid'],
     skillTypes: ['sword', 'shield', 'flood'],
     baseHP: 220, baseArmor: 0,
-    resource: { type: 'resolve', max: 100, current: 0, regenPerSec: 0, decayPerSec: 0 },
+      resource: { type: 'resolve', max: 250, current: 0, regenPerSec: 0, decayPerSec: 0 },
     globalSpeed: 1.0,
     abilities: [
       { abilityId: 'sword_slash', rank: 1 },
@@ -78,7 +78,7 @@ export const paragons = {
     tags: ['humanoid'],
     skillTypes: ['sword', 'bow', 'glamour'],
     baseHP: 210, baseArmor: 0,
-    resource: { type: 'rage', max: 100, current: 0, regenPerSec: 8, decayPerSec: 2 },
+      resource: { type: 'rage', max: 100, current: 0, regenPerSec: 0, decayPerSec: 2 },
     globalSpeed: 1.0,
     abilities: [
       { abilityId: '???', rank: 1 },

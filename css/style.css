@@ -30,6 +30,7 @@
   --resource-energy:#4a7ac9;
   --resource-rage:  #c94040;
   --resource-threat:#9a3ac9;
+  --resource-resolve:#b08030;
 
   --glow-gold:      rgba(212,168,67,0.15);
   --glow-red:       rgba(180,40,40,0.2);
@@ -611,9 +612,10 @@ body {
 
 .bar-fill.hp     { background: linear-gradient(90deg, var(--hp-bar) 0%, #e05050 100%); }
 .bar-fill.armor  { background: linear-gradient(90deg, var(--armor-bar) 0%, #e0b050 100%); box-shadow: 0 0 4px rgba(224,176,80,0.3); }
-.bar-fill.resource-energy { background: linear-gradient(90deg, #3a6ab9 0%, var(--resource-energy) 100%); }
-.bar-fill.resource-rage   { background: linear-gradient(90deg, #992020 0%, var(--resource-rage) 100%); }
-.bar-fill.resource-threat { background: linear-gradient(90deg, #6a20a9 0%, var(--resource-threat) 100%); }
+.bar-fill.resource-energy  { background: linear-gradient(90deg, #3a6ab9 0%, var(--resource-energy) 100%); }
+.bar-fill.resource-rage    { background: linear-gradient(90deg, #992020 0%, var(--resource-rage) 100%); }
+.bar-fill.resource-threat  { background: linear-gradient(90deg, #6a20a9 0%, var(--resource-threat) 100%); }
+.bar-fill.resource-resolve { background: linear-gradient(90deg, #8a6020 0%, var(--resource-resolve) 100%); }
 
 .bar-val {
   font-family: var(--font-heading);

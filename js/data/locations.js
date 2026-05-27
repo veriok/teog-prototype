@@ -44,26 +44,21 @@ export const locations = [
       // Fixed — always the opening skirmish.
       {
         index: 0, type: EventType.FIGHT, label: 'Patrol',
-        enemies: ['drowned_soldier_1', 'drowned_soldier_2'],
-        enemyRows: { front: ['drowned_soldier_1', 'drowned_soldier_2'], back: [] },
+        enemies: ['drowned_soldier_1'],
+        enemyRows: { front: ['drowned_soldier_1'], back: [] },
       },
-      // Random — composition drawn from randomEventTable + enemyPool at runtime.
       { index: 1, type: EventType.RANDOM },
       { index: 2, type: EventType.RANDOM },
-      // Rest spot — always visible on the track as a landmark.
       {
-        index: 3, type: EventType.REST_SPOT, label: 'Waterline Alcove',
-        loreText: 'A dry ledge above the flood. Someone sheltered here before — empty ration tins, a guttered torch still warm to the touch. Your paragons catch their breath.',
-        healPercent: 0.30,
-      },
-      { index: 4, type: EventType.RANDOM },
-      // Fixed elite — always present before the boss.
-      {
-        index: 5, type: EventType.ELITE, label: 'Warden',
+        index: 3, type: EventType.ELITE, label: 'Warden',
         enemies: ['siege_warden'],
         enemyRows: { front: ['siege_warden'], back: [] },
       },
-      // Fixed boss — zone conclusion.
+      {
+        index: 4, type: EventType.REST_SPOT, label: 'Waterline Alcove',
+        loreText: 'A dry ledge above the flood. Someone sheltered here before - empty ration tins, a guttered torch still warm to the touch. Your paragons catch their breath.',
+        healPercent: 0.30,
+      },
       {
         index: 6, type: EventType.BOSS, label: 'Sergeant',
         cinematicId: 'boss_intro_sergeant',

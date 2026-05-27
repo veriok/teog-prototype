@@ -168,6 +168,7 @@ const Game = {
     if (!p.paragonHP)         p.paragonHP         = {};
     if (!p.resolvedEvents)    p.resolvedEvents    = {};
     if (!p.randomEventCounts) p.randomEventCounts = {};
+    if (!p.paragonResolve)    p.paragonResolve    = {};
     return p;
   },
 
@@ -352,6 +353,7 @@ const Game = {
         abilityIds,
         equippedItems:      equipped,
         startingHP:         prog.paragonHP?.[entry.paragonId] ?? null,
+        startingResolve:    prog.paragonResolve?.[entry.paragonId] ?? null,
         skillLevels:        ps?.skillLevels        ?? {},
         equippedSkillTypes: ps?.activeSkillTypes    ?? [],
       };
@@ -368,7 +370,8 @@ const Game = {
             DATA.actors[id]?.abilities ?? []
           ).map(a => a.abilityId),
           equippedItems: new EquippedItems(),
-          startingHP:   prog.paragonHP?.[id] ?? null,
+          startingHP:      prog.paragonHP?.[id] ?? null,
+          startingResolve: prog.paragonResolve?.[id] ?? null,
         }));
 
     this.engine.init(config, ev, this.activeLocation.level ?? 1, this.activeLocation.combatMods ?? []);
@@ -415,6 +418,13 @@ const Game = {
       this.engine.paragons.forEach(p => {
         if (!p.isDead) prog.paragonHP[p.defId] = p.currentHP;
         else           prog.paragonHP[p.defId] = 0;
+      });
+
+      // Persist Resolve — carries across combats but resets on run end.
+      if (!prog.paragonResolve) prog.paragonResolve = {};
+      this.engine.paragons.forEach(p => {
+        if (p.resourceType === 'resolve')
+          prog.paragonResolve[p.defId] = p.isDead ? 0 : p.resource;
       });
 
       const defeatedEnemies = this.engine.enemies;
@@ -635,6 +645,7 @@ const Game = {
     prog.paragonHP         = {};
     prog.resolvedEvents    = {};
     prog.randomEventCounts = {};
+    prog.paragonResolve    = {};
     // Future: trigger defeat/exit cinematic keyed on reason + locId
     // e.g. if (reason === 'defeat') await Cinematic.play(`${locId}_defeat`);
   },

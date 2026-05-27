@@ -11,7 +11,7 @@ export const abilities = {
     ranks: [
       { rank: 1, cooldown: 2.5, cost: null, damage: 18, damageType: 'slashing', levelRequired: 1, autoLearn: true },
       { rank: 2, cooldown: 2.5, cost: null, damage: 26, damageType: 'slashing', levelRequired: 4, autoLearn: true },
-      { rank: 3, cooldown: 2.3, cost: null, damage: 35, damageType: 'slashing', levelRequired: 8, autoLearn: true },
+      { rank: 3, cooldown: 2.5, cost: null, damage: 35, damageType: 'slashing', levelRequired: 8, autoLearn: true },
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
@@ -24,8 +24,8 @@ export const abilities = {
     tree: SkillType.SWORD, tags: [AbilityTag.MELEE],
     ranks: [
       { rank: 1, cooldown: 5.0, cost: null, damage: 14, stacks: 1, duration: 6, levelRequired: 2, autoLearn: true },
-      { rank: 2, cooldown: 4.8, cost: null, damage: 20, stacks: 2, duration: 6, levelRequired: 5, autoLearn: true },
-      { rank: 3, cooldown: 4.5, cost: null, damage: 28, stacks: 3, duration: 6, levelRequired: 9, autoLearn: true },
+      { rank: 2, cooldown: 5.0, cost: null, damage: 20, stacks: 2, duration: 6, levelRequired: 5, autoLearn: true },
+      { rank: 3, cooldown: 5.0, cost: null, damage: 28, stacks: 3, duration: 6, levelRequired: 9, autoLearn: true },
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
@@ -57,9 +57,9 @@ export const abilities = {
     id: 'fortify', name: 'Fortify', icon: '🏰',
     tree: SkillType.SHIELD, tags: [AbilityTag.DEFENSIVE],
     ranks: [
-      { rank: 1, cooldown: 10.0, cost: null, guardStacks: 2, healHp: 0,  levelRequired: 1, autoLearn: true },
-      { rank: 2, cooldown: 9.5,  cost: null, guardStacks: 3, healHp: 0,  levelRequired: 4, autoLearn: true },
-      { rank: 3, cooldown: 9.0,  cost: null, guardStacks: 4, healHp: 15, levelRequired: 8, autoLearn: true },
+      { rank: 1, cooldown: 10.0, cost: null, guardStacks: 2, healHp: 0,  levelRequired: 2, autoLearn: true },
+      { rank: 2, cooldown: 9.5,  cost: null, guardStacks: 3, healHp: 0,  levelRequired: 5, autoLearn: true },
+      { rank: 3, cooldown: 9.0,  cost: null, guardStacks: 4, healHp: 15, levelRequired: 9, autoLearn: true },
     ],
     targeting: 'self',
     execute(caster, targets, rank) {
@@ -300,7 +300,7 @@ export const abilities = {
   heavy_swing: {
     id: 'heavy_swing', name: 'Heavy Swing', icon: '⚔️',
     tags: [AbilityTag.MELEE],
-    ranks: [{ rank: 1, cooldown: 3.2, cost: null, damage: 22, levelRequired: 1, autoLearn: true }],
+    ranks: [{ rank: 1, cooldown: 3.2, cost: null, damage: 16, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
       return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'slashing' }];
@@ -310,7 +310,7 @@ export const abilities = {
   bash: {
     id: 'bash', name: 'Bash', icon: '💢',
     tags: [AbilityTag.MELEE],
-    ranks: [{ rank: 1, cooldown: 8.0, cost: null, damage: 12, stunDuration: 0.6, levelRequired: 1, autoLearn: true }],
+    ranks: [{ rank: 1, cooldown: 15.0, cost: null, damage: 8, stunDuration: 0.6, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
       return [

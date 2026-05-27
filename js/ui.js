@@ -147,7 +147,7 @@ export const UI = {
   },
 
   _resourceLabel(type) {
-    return { energy: 'EN', rage: 'RG', faith: 'FT', threat: 'THR' }[type] || '??';
+    return { energy: 'EN', rage: 'RG', faith: 'FT', threat: 'THR', resolve: 'RES' }[type] || '??';
   },
 
   // ── Build ability icon row ─────────────────────────────────────────────

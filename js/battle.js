@@ -9,6 +9,16 @@ import { DAMAGE_UMBRELLA, RESISTANCE_VALUE } from './enums.js';
 
 const TICK = 0.1; // seconds per tick
 
+// Returns the actual resource amount an actor must spend for a given base cost.
+// Energy  = 100 % of base.
+// Rage    = 25 % of base, rounded up.
+// Resolve = 33 % of base, rounded up.
+function effectiveCost(resourceType, baseAmount) {
+  if (resourceType === 'rage')    return Math.ceil(baseAmount * 0.25);
+  if (resourceType === 'resolve') return Math.ceil(baseAmount * 0.33);
+  return baseAmount; // energy, threat, none
+}
+
 export class ActorRuntime {
   constructor(def) {
     this.id          = def.id;
@@ -154,12 +164,12 @@ export class ActorRuntime {
   // ── Resource helpers ──────────────────────────────────────────────────
   canAfford(cost) {
     if (!cost) return true;
-    return this.resource >= cost.amount;
+    return this.resource >= effectiveCost(this.resourceType, cost.amount);
   }
 
   spendResource(cost) {
     if (!cost) return;
-    this.resource = Math.max(0, this.resource - cost.amount);
+    this.resource = Math.max(0, this.resource - effectiveCost(this.resourceType, cost.amount));
   }
 
   // ── Armor computation (with shred) ────────────────────────────────────
@@ -239,6 +249,10 @@ export class BattleEngine {
       // Apply persisted HP from previous event if provided (HP does not regen between combats).
       if (cfg.startingHP != null) {
         actor.currentHP = Math.min(actor.maxHP, Math.max(0, cfg.startingHP));
+      }
+      // Restore persisted Resolve (carries across combats within a run).
+      if (cfg.startingResolve != null && actor.resourceType === 'resolve') {
+        actor.resource = Math.min(actor.resourceMax, Math.max(0, cfg.startingResolve));
       }
       return actor;
     });
@@ -369,7 +383,15 @@ export class BattleEngine {
       actor.currentHP = 0;
       this.log(`${actor.name} has fallen.`, 'death');
       this.onActorDied(actor);
-    });
+      // Grant Resolve to living resolve-type paragons when an enemy is vanquished.
+      if (actor.subtype === 'enemy') {
+        const gain = actor.subclass === 'boss'  ? 50 :
+                     actor.subclass === 'elite' ? 35 : 20;
+        this.paragons.forEach(p => {
+          if (!p.isDead && p.resourceType === 'resolve')
+            p.resource = Math.min(p.resourceMax, p.resource + gain);
+        });
+      }    });
 
     // ── Phase 4: Victory check ────────────────────────────────────────────
     if (!this.ended) {
@@ -614,10 +636,12 @@ export class BattleEngine {
   // ── Threat/Rage management ─────────────────────────────────────────────
   _addThreat(actor, dmgAmount) {
     if (actor.resourceType !== 'threat') {
-      // If it's a paragon taking damage, build rage
+      // If it's a paragon taking damage, build rage or resolve
       if (actor.resourceType === 'rage') {
         const gain = Math.min(20, 8 + Math.floor(dmgAmount / 5));
         actor.resource = Math.min(actor.resourceMax, actor.resource + gain);
+      } else if (actor.resourceType === 'resolve') {
+        actor.resource = Math.min(actor.resourceMax, actor.resource + 4);
       }
       return;
     }
