@@ -234,11 +234,14 @@ export const UI = {
     if (!strip) return;
     strip.innerHTML = '';
 
-    actor.statuses.forEach((entry, id) => {
-      const def = DATA.statuses[id];
-      if (!def) return;
+    // One icon per status entry (multiple casters can each have their own entry).
+    for (const entry of actor.getAllStatusEntriesAll()) {
+      const def = DATA.statuses[entry.statusId];
+      if (!def) continue;
       const icon = document.createElement('div');
       icon.className = `status-icon ${def.cssClass}`;
+      // Inactive entries (non-strongest for non-tick statuses) rendered as dimmed.
+      if (entry.isActive === false) icon.classList.add('status-inactive');
       icon.textContent = def.icon;
       if (entry.stacks > 1) {
         const sc = document.createElement('span');
@@ -246,9 +249,9 @@ export const UI = {
         sc.textContent = entry.stacks;
         icon.appendChild(sc);
       }
-      icon.title = `${def.label} (${Math.ceil(entry.duration)}s): ${def.tooltip}`;
+      icon.title = `${def.label} — ${entry.casterName} (${entry.stacks} stack${entry.stacks !== 1 ? 's' : ''}): ${def.tooltip}`;
       strip.appendChild(icon);
-    });
+    }
   },
 
   _updateAbilityIcons(card, actor) {

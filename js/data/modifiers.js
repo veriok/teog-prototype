@@ -86,26 +86,6 @@ export const modifiers = {
     baseValue: 1, valuePerLevel: 0.3,
   },
 
-  // ── Rollable tactics mods ─────────────────────────────────────────────────
-
-  tactics_speed_bonus: {
-    id: 'tactics_speed_bonus', name: 'Speed Bonus',
-    modifierType: ModifierType.TACTICS,
-    modClass: 'stat', effectTarget: 'speed',
-    isRollable: true,
-    allowedItemTypes: null, // all item types
-    baseValue: 0.02, valuePerLevel: 0.005,
-  },
-
-  tactics_flat_dmg: {
-    id: 'tactics_flat_dmg', name: 'Tactical Damage',
-    modifierType: ModifierType.TACTICS,
-    modClass: 'stat', effectTarget: 'flatDmg',
-    isRollable: true,
-    allowedItemTypes: null, // all item types
-    baseValue: 1, valuePerLevel: 0.4,
-  },
-
   // ── Rollable fire mods ────────────────────────────────────────────────────
 
   fire_dmg_bonus: {
@@ -117,16 +97,25 @@ export const modifiers = {
     baseValue: 1, valuePerLevel: 0.5,
   },
 
-  fire_burn_duration: {
-    id: 'fire_burn_duration', name: 'Burn Duration',
+  fire_burn_dmg: {
+    id: 'fire_burn_dmg', name: 'Burn Damage',
     modifierType: ModifierType.FIRE,
-    modClass: 'stat', effectTarget: 'burnDuration',
+    modClass: 'stat', effectTarget: 'burnDmgBonus',
     isRollable: true,
     allowedItemTypes: [ItemType.MAIN_HAND],
-    baseValue: 0.5, valuePerLevel: 0.1,
+    baseValue: 0.5, valuePerLevel: 0.2,
   },
 
   // ── Rollable void mods ────────────────────────────────────────────────────
+
+  sword_bleed_dmg: {
+    id: 'sword_bleed_dmg', name: 'Bleed Damage',
+    modifierType: ModifierType.SWORD,
+    modClass: 'stat', effectTarget: 'bleedDmgBonus',
+    isRollable: true,
+    allowedItemTypes: [ItemType.MAIN_HAND],
+    baseValue: 0.5, valuePerLevel: 0.2,
+  },
 
   void_dmg_bonus: {
     id: 'void_dmg_bonus', name: 'Void Damage Bonus',
@@ -163,6 +152,15 @@ export const modifiers = {
     modClass: 'stat', effectTarget: 'flatDmg',
     isRollable: true,
     allowedItemTypes: null, // all item types
+    baseValue: 1, valuePerLevel: 0.5,
+  },
+
+  generic_health_regen: {
+    id: 'generic_health_regen', name: 'Health Regen',
+    modifierType: ModifierType.GENERIC,
+    modClass: 'stat', effectTarget: 'healthRegen',
+    isRollable: true,
+    allowedItemTypes: null, // all item types — rare drop
     baseValue: 1, valuePerLevel: 0.5,
   },
 

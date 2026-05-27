@@ -4,7 +4,7 @@ import { DATA }           from './data/index.js';
 import { UI }             from './ui.js';
 import { EquippedItems }  from './inventory.js';
 import { equipActorItems } from './loot.js';
-import { computeActorStats, getRankForLevel, scaleActorByLevel } from './stats.js';
+import { computeActorStats, getRankForLevel, scaleActorByLevel, computeHitDamage } from './stats.js';
 import { DAMAGE_UMBRELLA, RESISTANCE_VALUE } from './enums.js';
 
 const TICK = 0.1; // seconds per tick
@@ -20,6 +20,7 @@ function effectiveCost(resourceType, baseAmount) {
 }
 
 export class ActorRuntime {
+  static _nextId = 0;
   constructor(def) {
     this.id          = def.id;
     this.defId       = def.id;
@@ -95,15 +96,20 @@ export class ActorRuntime {
     // (e.g. by ability effects or future item mods). Missing key = NORMAL (×1.0 damage).
     this.resistances = def.resistances ? { ...def.resistances } : {};
 
+    // Unique runtime identity — used as caster key in status entries
+    this._runtimeId = ActorRuntime._nextId++;
+
+    // Accumulator for passive item-based regen (fires every 5 real seconds)
+    this.regenTickAccum = 0;
+
     // Flags
     this.isDead      = false;
     this.isActing    = false; // prevents re-queue in same tick
   }
 
   // ── Resistance helper ─────────────────────────────────────────────────
-  // Returns the effective numeric resistance for a given damage type,
-  // combining the actor's base resistance map with any active status mods.
-  // Positive = damage reduced; negative = damage amplified.
+  // Returns the effective numeric resistance for a given damage type.
+  // void_exposed uses the ACTIVE entry's effectiveValuePerStack (caster-scaled).
   // High end is capped at 1.5 (IMMUNE ceiling). Low end is unclamped.
   getEffectiveResistance(damageType) {
     // 1. Specific type first, then umbrella category fallback
@@ -114,15 +120,13 @@ export class ActorRuntime {
     }
     let resistVal = keyword != null ? (RESISTANCE_VALUE[keyword] ?? 0) : 0;
 
-    // 2. Add status-based resistance mods (e.g. void_exposed)
-    for (const [statusId, entry] of this.statuses) {
-      const def = DATA.statuses[statusId];
-      if (!def?.resistanceMod) continue;
-      const mod = def.resistanceMod[damageType];
-      if (mod != null) resistVal += mod * entry.stacks;
+    // 2. void_exposed: use active entry's effectiveValuePerStack (strongest-wins entry)
+    const voidExposed = this.getStatus('void_exposed');
+    if (voidExposed && damageType === 'void') {
+      resistVal -= voidExposed.stacks * voidExposed.effectiveValuePerStack;
     }
 
-    // 3. Cap at 1.5 (IMMUNE); no floor clamp — vulnerabilities can stack freely
+    // 3. Cap at 1.5 (IMMUNE); no floor clamp
     return Math.min(1.5, resistVal);
   }
 
@@ -130,7 +134,7 @@ export class ActorRuntime {
   computeGlobalSpeed() {
     if (this.hasStatus('stun')) return 0;
     let speed = this.baseSpeed;
-    const haste = this.getStatus('haste');
+    const haste = this.getStatus('haste'); // returns active (strongest) entry
     const slow  = this.getStatus('slow');
     if (haste) speed += haste.stacks * 0.15;
     if (slow)  speed -= slow.stacks  * 0.15;
@@ -138,28 +142,102 @@ export class ActorRuntime {
   }
 
   // ── Status helpers ────────────────────────────────────────────────────
-  hasStatus(id)  { return this.statuses.has(id) && !this.statuses.get(id).expired; }
-  getStatus(id)  { return this.statuses.get(id) || null; }
+  // Statuses are keyed by `${statusId}:${casterId}` to allow multiple casters
+  // to each maintain independent entries for the same status type.
 
-  applyStatus(id, stacks, duration) {
+  hasStatus(id) {
+    for (const entry of this.statuses.values()) {
+      if (entry.statusId === id) return true;
+    }
+    return false;
+  }
+
+  // Returns the "active" (strongest) entry for non-tick statuses,
+  // or the first found entry for tick statuses (all tick entries are active).
+  getStatus(id) {
+    const def = DATA.statuses[id];
+    if (!def) return null;
+    let best = null;
+    for (const entry of this.statuses.values()) {
+      if (entry.statusId !== id) continue;
+      if (!best) { best = entry; continue; }
+      if (def.compareByDuration) {
+        if (entry.stacks > best.stacks) best = entry;
+      } else {
+        const eVal = entry.stacks * entry.effectiveValuePerStack;
+        const bVal = best.stacks   * best.effectiveValuePerStack;
+        if (eVal > bVal) best = entry;
+      }
+    }
+    return best;
+  }
+
+  // All entries for a given statusId (for UI rendering).
+  getAllStatusEntries(id) {
+    const result = [];
+    for (const entry of this.statuses.values()) {
+      if (entry.statusId === id) result.push(entry);
+    }
+    return result;
+  }
+
+  // All entries across all statuses as a flat array (for UI).
+  getAllStatusEntriesAll() {
+    return [...this.statuses.values()];
+  }
+
+  // Apply a status from a caster. Duration is derived: 1 stack = 2 real seconds.
+  applyStatus(id, stacks, caster) {
     const def = DATA.statuses[id];
     if (!def) return;
-    const existing = this.statuses.get(id);
+
+    // Compute the per-stack effective value from the caster's stats at apply time.
+    const snap = caster?.stats ?? {};
+    let evps;
+    switch (id) {
+      case 'guard':   evps = 5 + (snap.blockBonus   ?? 0); break;
+      case 'burning': evps = 4 + (snap.burnDmgBonus ?? 0); break;
+      case 'bleeding':evps = 6 + (snap.bleedDmgBonus ?? 0); break;
+      case 'regen':   evps = 4; break;
+      default:        evps = def.compareBase ?? 1; break;
+    }
+
+    const casterId   = caster?._runtimeId ?? 0;
+    const casterName = caster?.name ?? 'Unknown';
+    const entryKey   = `${id}:${casterId}`;
+    const existing   = this.statuses.get(entryKey);
 
     if (def.stackMode === 'unique') {
-      // refresh duration
-      this.statuses.set(id, { stacks: 1, duration: Math.max(existing?.duration || 0, duration), tickAccum: 0 });
+      // Always 1 stack; reset tick timer on re-apply
+      this.statuses.set(entryKey, {
+        statusId: id, entryKey, casterId, casterName,
+        statsSnapshot: { ...snap },
+        stacks: 1, tickAccum: 0, effectiveValuePerStack: evps, isActive: false,
+      });
     } else if (def.stackMode === 'stack') {
       if (existing) {
-        existing.stacks = Math.min((existing.stacks || 0) + stacks, def.maxStacks);
-        existing.duration = Math.max(existing.duration, duration);
+        // Same caster reapplies — add stacks, keep tick accumulator going
+        existing.stacks = Math.min(existing.stacks + stacks, def.maxStacks);
       } else {
-        this.statuses.set(id, { stacks: Math.min(stacks, def.maxStacks), duration, tickAccum: 0 });
+        this.statuses.set(entryKey, {
+          statusId: id, entryKey, casterId, casterName,
+          statsSnapshot: { ...snap },
+          stacks: Math.min(stacks, def.maxStacks), tickAccum: 0,
+          effectiveValuePerStack: evps, isActive: false,
+        });
       }
     }
   }
 
-  removeStatus(id) { this.statuses.delete(id); }
+  // Remove all entries for a given statusId.
+  removeStatus(id) {
+    for (const key of this.statuses.keys()) {
+      if (key.startsWith(`${id}:`)) this.statuses.delete(key);
+    }
+  }
+
+  // Clear every status (called at battle end).
+  clearAllStatuses() { this.statuses.clear(); }
 
   // ── Resource helpers ──────────────────────────────────────────────────
   canAfford(cost) {
@@ -172,12 +250,9 @@ export class ActorRuntime {
     this.resource = Math.max(0, this.resource - effectiveCost(this.resourceType, cost.amount));
   }
 
-  // ── Armor computation (with shred) ────────────────────────────────────
+  // ── Armor computation ──────────────────────────────────────────────────
   effectiveArmor() {
-    let armor = this.currentArmor;
-    const shred = this.getStatus('armor_shred');
-    if (shred) armor = Math.max(0, armor - shred.stacks * 15);
-    return armor;
+    return this.currentArmor;
   }
 }
 
@@ -447,7 +522,18 @@ export class BattleEngine {
       // decay if not recently acted
       actor.resource = Math.max(0, actor.resource - actor.resourceDecay * dt);
     }
-  }
+    // Passive item-based regen ticks every 5 real seconds.
+    actor.regenTickAccum = (actor.regenTickAccum || 0) + dt;
+    if (actor.regenTickAccum >= 5.0) {
+      actor.regenTickAccum -= 5.0;
+      const stats = actor.stats || {};
+      if ((stats.armorRegen ?? 0) > 0) {
+        actor.currentArmor = Math.min(actor.maxArmor, actor.currentArmor + stats.armorRegen);
+      }
+      if ((stats.healthRegen ?? 0) > 0) {
+        actor.currentHP = Math.min(actor.maxHP, actor.currentHP + stats.healthRegen);
+      }
+    }  }
 
   // ── Threat ticking ─────────────────────────────────────────────────────
   _tickThreat(actor, dt) {
@@ -480,6 +566,8 @@ export class BattleEngine {
     effects.forEach(fx => {
       const target = fx.target;
       if (!target || target.isDead) return;
+      // Forward ability tags so computeHitDamage can evaluate conditional mods.
+      fx._abilityTags = ability.tags ?? [];
       this._applyEffect(actor, fx, ability.name);
     });
 
@@ -500,14 +588,17 @@ export class BattleEngine {
       case 'damage': {
         let raw = effect.amount;
         const dtype = effect.damageType || 'slashing';
+        const isDot  = effect.isDot === true;
 
-        // Guard absorption (before everything else, for all damage types)
+        // Guard absorption — active entry's effectiveValuePerStack.
+        // Applies to BOTH DoT and direct hits.
         if (!effect.ignoresGuard && target.hasStatus('guard')) {
-          const guardEntry = target.getStatus('guard');
+          const guardEntry = target.getStatus('guard'); // active (strongest) entry
           if (guardEntry && guardEntry.stacks > 0) {
-            const absorbed = guardEntry.stacks * 5;
+            const absorbPerStack = guardEntry.effectiveValuePerStack;
+            const absorbed = guardEntry.stacks * absorbPerStack;
             if (raw <= absorbed) {
-              guardEntry.stacks -= Math.ceil(raw / 5);
+              guardEntry.stacks -= Math.ceil(raw / absorbPerStack);
               if (guardEntry.stacks <= 0) target.removeStatus('guard');
               this.log(`<span class="actor-name">${target.name}</span>'s Guard absorbs the hit.`, 'status');
               return;
@@ -519,7 +610,7 @@ export class BattleEngine {
           }
         }
 
-        // TRUE damage: bypasses armor DR and resistance entirely
+        // TRUE damage: bypasses armor DR and resistance entirely.
         if (dtype === 'true') {
           target.currentHP -= raw;
           this.log(`<span class="actor-name">${target.name}</span> takes <span class="val">${raw}</span> true damage${sourceName ? ` from <span class="ability-name">${sourceName}</span>` : ''}.`, 'damage');
@@ -528,47 +619,72 @@ export class BattleEngine {
           return;
         }
 
-        // armorDamage keyword: pre-reduce armor BEFORE DR calculation so the hit
-        // benefits from the weakened armor (lower DR + smaller armor buffer).
-        if (effect.armorDamage > 0) {
-          const aDmg = Math.min(target.currentArmor, effect.armorDamage);
-          target.currentArmor -= aDmg;
-          if (aDmg > 0) {
-            this.log(`<span class="actor-name">${target.name}</span>'s armor corrodes for <span class="val">${aDmg}</span>.`, 'damage');
-            UI.floatText(target, `-${aDmg}`, 'armor');
+        if (isDot) {
+          // ── DoT path: no attacker stat scaling, no armor DR, resistance only ──
+          const resistVal = target.getEffectiveResistance(dtype);
+          if (resistVal >= 1.5) {
+            this.log(`<span class="actor-name">${target.name}</span> is immune to ${dtype} damage.`, 'status');
+            return;
           }
-        }
+          const effective = Math.floor(Math.max(0, raw) * (1 - resistVal));
+          if (effective > 0) {
+            target.currentHP -= effective;
+            this.log(`<span class="actor-name">${target.name}</span> suffers <span class="val">${effective}</span> ${dtype} from <span class="ability-name">${sourceName}</span>.`, 'damage');
+            UI.floatText(target, `-${effective}`, 'damage');
+            this._addThreat(target, effective);
+          }
 
-        // Armor DR — 1 DR per 15 current armor
-        const basedr = Math.floor(target.effectiveArmor() / 15);
-        const dr     = effect.armorPierce ? Math.floor(basedr * (1 - effect.armorPierce)) : basedr;
+        } else {
+          // ── Direct hit path: stat bonuses + crits + armor DR + resistance ──
+          const ctx = {
+            attacker: caster, defender: target,
+            damageType: dtype,
+            abilityTags: effect._abilityTags ?? [],
+            isCrit: false,
+            locationMods: this.locationMods,
+          };
+          raw = computeHitDamage(raw, ctx);
 
-        // Resistance — applied to the full effective damage (after DR, before armor distribution)
-        const resistVal = target.getEffectiveResistance(dtype);
-        if (resistVal >= 1.5) {
-          // Fully immune — skip damage entirely
-          this.log(`<span class="actor-name">${target.name}</span> is immune to ${dtype} damage.`, 'status');
+          // armorDamage keyword: pre-reduce armor before DR calculation.
+          if (effect.armorDamage > 0) {
+            const aDmg = Math.min(target.currentArmor, effect.armorDamage);
+            target.currentArmor -= aDmg;
+            if (aDmg > 0) {
+              this.log(`<span class="actor-name">${target.name}</span>'s armor corrodes for <span class="val">${aDmg}</span>.`, 'damage');
+              UI.floatText(target, `-${aDmg}`, 'armor');
+            }
+          }
+
+          // Armor DR — 1 DR per 15 current armor.
+          const basedr = Math.floor(target.effectiveArmor() / 15);
+          const dr     = effect.armorPierce ? Math.floor(basedr * (1 - effect.armorPierce)) : basedr;
+
+          // Resistance — applied to full effective damage.
+          const resistVal = target.getEffectiveResistance(dtype);
+          if (resistVal >= 1.5) {
+            this.log(`<span class="actor-name">${target.name}</span> is immune to ${dtype} damage.`, 'status');
+            UI.flashCard(target, 'hit-flash');
+            return;
+          }
+          const effective = Math.floor(Math.max(0, raw - dr) * (1 - resistVal));
+
+          // Distribute between armor pool and HP.
+          const armorHit = Math.min(target.currentArmor, effective);
+          const hpHit    = effective - armorHit;
+
+          target.currentArmor -= armorHit;
+          target.currentHP    -= hpHit;
+
+          const totalShown = armorHit + hpHit;
+          if (totalShown > 0) {
+            const critPrefix = ctx.isCrit ? 'CRIT! ' : '';
+            this.log(`${critPrefix}<span class="actor-name">${target.name}</span> takes <span class="val">${totalShown}</span> ${dtype} damage${armorHit > 0 ? ` (${armorHit} to armor)` : ''}${sourceName ? ` from <span class="ability-name">${sourceName}</span>` : ''}.`, 'damage');
+            UI.floatText(target, `-${totalShown}`, 'damage');
+          }
+
           UI.flashCard(target, 'hit-flash');
-          return;
+          this._addThreat(target, totalShown);
         }
-        const effective = Math.floor(Math.max(0, raw - dr) * (1 - resistVal));
-
-        // Distribute between armor pool and HP
-        const armorHit = Math.min(target.currentArmor, effective);
-        const hpHit    = effective - armorHit;
-
-        // Apply
-        target.currentArmor -= armorHit;
-        target.currentHP    -= hpHit;
-
-        const totalShown = armorHit + hpHit;
-        if (totalShown > 0) {
-          this.log(`<span class="actor-name">${target.name}</span> takes <span class="val">${totalShown}</span> ${dtype} damage${armorHit > 0 ? ` (${armorHit} to armor)` : ''}${sourceName ? ` from <span class="ability-name">${sourceName}</span>` : ''}.`, 'damage');
-          UI.floatText(target, `-${totalShown}`, 'damage');
-        }
-
-        UI.flashCard(target, 'hit-flash');
-        this._addThreat(target, totalShown);
         break;
       }
 
@@ -611,7 +727,7 @@ export class BattleEngine {
       }
 
       case 'apply_status': {
-        target.applyStatus(effect.statusId, effect.stacks || 1, effect.duration || 5);
+        target.applyStatus(effect.statusId, effect.stacks || 1, caster);
         const def = DATA.statuses[effect.statusId];
         if (def) this.log(`<span class="actor-name">${target.name}</span> is afflicted with <span class="ability-name">${def.label}</span> (${effect.stacks || 1} stack${(effect.stacks || 1) > 1 ? 's' : ''}).`, 'status');
         break;
@@ -787,8 +903,8 @@ export class BattleEngine {
       this.log('Defeat. The Paragons have fallen.', 'system');
     }
 
-    // Strip regen from all paragons — regen must not persist after combat ends.
-    this.paragons.forEach(p => p.removeStatus('regen'));
+    // Clear all statuses from every actor so nothing bleeds into the next fight.
+    this.allActors.forEach(a => a.clearAllStatuses());
 
     this.onBattleEnd(result);
   }

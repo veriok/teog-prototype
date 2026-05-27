@@ -37,8 +37,10 @@ export function computeActorStats(actor) {
     speed:         actor.baseSpeed,
     blockBonus:    0,
     armorRegen:    0,
+    healthRegen:   0,
     fireDmgBonus:  0,
-    burnDuration:  0,
+    burnDmgBonus:  0,
+    bleedDmgBonus: 0,
     voidDmgBonus:  0,
     entropyBonus:  0,
   };
@@ -120,6 +122,25 @@ export function scaleActorByLevel(actor, level) {
 
 export function computeHitDamage(baseDmg, ctx) {
   let dmg = baseDmg;
+
+  // ── Stat-bonus step (direct hits only, not DoT) ───────────────────────
+  // Apply flat additive bonuses from the attacker's aggregated item stats.
+  const stats = ctx.attacker?.stats;
+  if (stats) {
+    // Flat bonus applies to all direct hits.
+    dmg += stats.flatDmg ?? 0;
+    // Type-specific bonuses.
+    if (ctx.damageType === 'slashing') dmg += stats.slashingDmg ?? 0;
+    if (ctx.damageType === 'fire')     dmg += stats.fireDmgBonus ?? 0;
+    if (ctx.damageType === 'void')     dmg += stats.voidDmgBonus ?? 0;
+    // Critical hit roll.
+    if ((stats.critChance ?? 0) > 0 && Math.random() * 100 < stats.critChance) {
+      dmg *= 1.5;
+      ctx.isCrit = true;
+    }
+  }
+
+  // ── Combat-modifier step (conditional item/passive/location mods) ─────
   for (const entry of _gatherCombatMods(ctx)) {
     if (!_matchesCondition(entry.condition, ctx)) continue;
     dmg = _applyEffect(dmg, entry, ctx);

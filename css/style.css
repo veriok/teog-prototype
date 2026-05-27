@@ -652,6 +652,9 @@ body {
 
 .status-icon:hover { transform: scale(1.15); z-index: 10; }
 
+/* Inactive entries: non-strongest caster for non-tick statuses (still displayed but dimmed) */
+.status-inactive { opacity: 0.4; filter: grayscale(60%); }
+
 .status-icon .stack-count {
   position: absolute;
   bottom: -2px;
