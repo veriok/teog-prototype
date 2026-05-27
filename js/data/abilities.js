@@ -65,7 +65,6 @@ export const abilities = {
     execute(caster, targets, rank) {
       const effects = [
         { type: 'apply_status', target: caster, statusId: 'guard', stacks: rank.guardStacks },
-        { type: 'combat_refresh', target: caster }
       ];
       if (rank.healHp > 0) effects.push({ type: 'heal', target: caster, amount: rank.healHp });
       return effects;
@@ -274,7 +273,6 @@ export const abilities = {
     execute(caster, targets, rank) {
       return [
         { type: 'apply_status', target: caster, statusId: 'guard', stacks: rank.guardStacks },
-        { type: 'combat_refresh', target: caster },
       ];
     }
   },
@@ -394,7 +392,6 @@ export const abilities = {
     execute(caster, targets, rank) {
       return [
         { type: 'apply_status', target: caster, statusId: 'guard', stacks: rank.guardStacks },
-        { type: 'combat_refresh', target: caster }
       ];
     }
   },

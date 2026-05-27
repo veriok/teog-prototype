@@ -89,9 +89,6 @@ export class ActorRuntime {
     this.passives = [];
     this.stats    = {};
 
-    // Combat refresh cooldown
-    this.combatRefreshCD = 0;
-
     // Resistances — keyword map copied from definition so it can be mutated at runtime
     // (e.g. by ability effects or future item mods). Missing key = NORMAL (×1.0 damage).
     this.resistances = def.resistances ? { ...def.resistances } : {};
@@ -416,7 +413,6 @@ export class BattleEngine {
         actor.abilities.forEach(ab => {
           if (ab.currentCooldown > 0) ab.currentCooldown -= scaledDt;
         });
-        if (actor.combatRefreshCD > 0) actor.combatRefreshCD -= scaledDt;
       }
 
       // Status durations tick in REAL time regardless of speed
@@ -711,21 +707,6 @@ export class BattleEngine {
         if (restored > 0) {
           this.log(`<span class="actor-name">${target.name}</span> restores <span class="val">${restored}</span> Armor.`, 'heal');
           UI.floatText(target, `+${restored}`, 'armor');
-        }
-        break;
-      }
-
-      case 'combat_refresh': {
-        if (target.combatRefreshCD <= 0) {
-          const base = 15;
-          const before = target.currentArmor;
-          target.currentArmor = Math.min(target.maxArmor, target.currentArmor + base);
-          const restored = target.currentArmor - before;
-          target.combatRefreshCD = 20;
-          if (restored > 0) {
-            this.log(`<span class="actor-name">${target.name}</span> triggers Combat Refresh (+${restored} Armor).`, 'heal');
-            UI.floatText(target, `+${restored}`, 'armor');
-          }
         }
         break;
       }
