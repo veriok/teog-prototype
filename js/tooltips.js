@@ -156,7 +156,7 @@ export const Tooltips = {
     for (const dtype of ALL_TYPES) {
       const val = actor.getEffectiveResistance(dtype);
       let keyword, cssClass;
-      if (val >= 1.5) { keyword = 'Immune';        cssClass = 'resist-immune'; }
+      if (val >= 1.0) { keyword = 'Immune';        cssClass = 'resist-immune'; }
       else if (val >= 0.75) { keyword = 'Near Immune';   cssClass = 'resist-near-immune'; }
       else if (val >= 0.50) { keyword = 'Very Resistant'; cssClass = 'resist-very-resistant'; }
       else if (val >= 0.25) { keyword = 'Resistant';     cssClass = 'resist-resistant'; }

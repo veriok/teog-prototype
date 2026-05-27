@@ -182,5 +182,5 @@ export const RESISTANCE_VALUE = Object.freeze({
   [ResistanceKeyword.RESISTANT]:       0.25,
   [ResistanceKeyword.VERY_RESISTANT]:  0.50,
   [ResistanceKeyword.NEAR_IMMUNE]:     0.75,
-  [ResistanceKeyword.IMMUNE]:          1.50,
+  [ResistanceKeyword.IMMUNE]:          1.50, // higher then 1.0 because it shouldn't be so easy to make vulnerable with shred.
 });

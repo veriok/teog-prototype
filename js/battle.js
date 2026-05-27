@@ -110,7 +110,7 @@ export class ActorRuntime {
   // ── Resistance helper ─────────────────────────────────────────────────
   // Returns the effective numeric resistance for a given damage type.
   // void_exposed uses the ACTIVE entry's effectiveValuePerStack (caster-scaled).
-  // High end is capped at 1.5 (IMMUNE ceiling). Low end is unclamped.
+  // High end is capped at 1.0 (IMMUNE ceiling). Low end is unclamped.
   getEffectiveResistance(damageType) {
     // 1. Specific type first, then umbrella category fallback
     let keyword = this.resistances[damageType];
@@ -126,8 +126,8 @@ export class ActorRuntime {
       resistVal -= voidExposed.stacks * voidExposed.effectiveValuePerStack;
     }
 
-    // 3. Cap at 1.5 (IMMUNE); no floor clamp
-    return Math.min(1.5, resistVal);
+    // 3. Cap at 1.0 (IMMUNE); no floor clamp
+    return Math.min(1.0, resistVal);
   }
 
   // ── Computed GlobalSpeed ──────────────────────────────────────────────
@@ -489,26 +489,30 @@ export class BattleEngine {
   }
 
   // ── Status ticking ─────────────────────────────────────────────────────
+  // Timing model: 1 stack = 2 real seconds. Every 2s the engine fires the
+  // tick effect (if any) then decrements 1 stack. Entry is removed when stacks reach 0.
   _tickStatuses(actor, dt) {
-    for (const [id, entry] of actor.statuses) {
-      const def = DATA.statuses[id];
-      if (!def) { actor.statuses.delete(id); continue; }
+    for (const [key, entry] of actor.statuses) {
+      const def = DATA.statuses[entry.statusId];
+      if (!def) { actor.statuses.delete(key); continue; }
 
-      // Duration countdown (real time)
-      entry.duration -= dt;
-      if (entry.duration <= 0) { actor.statuses.delete(id); continue; }
+      entry.tickAccum = (entry.tickAccum || 0) + dt;
+      if (entry.tickAccum >= 2.0) {
+        entry.tickAccum -= 2.0;
 
-      // Tick effects
-      if (def.tickEffect && def.tickInterval) {
-        entry.tickAccum = (entry.tickAccum || 0) + dt;
-        if (entry.tickAccum >= def.tickInterval) {
-          entry.tickAccum -= def.tickInterval;
-          const effect = def.tickEffect(actor, entry.stacks);
+        // Fire tick effect before decrementing (e.g. bleeding, burning, regen).
+        if (def.tickEffect) {
+          const effect = def.tickEffect(actor, entry.stacks, entry.effectiveValuePerStack);
           if (effect) {
-            // Ensure tick effects target the actor the status is applied to.
             if (!effect.target) effect.target = actor;
-            this._applyEffect(actor, effect, `${def.label}`);
+            this._applyEffect(actor, effect, def.label);
           }
+        }
+
+        // Decrement 1 stack; remove entry when exhausted.
+        entry.stacks -= 1;
+        if (entry.stacks <= 0) {
+          actor.statuses.delete(key);
         }
       }
     }
@@ -622,14 +626,14 @@ export class BattleEngine {
         if (isDot) {
           // ── DoT path: no attacker stat scaling, no armor DR, resistance only ──
           const resistVal = target.getEffectiveResistance(dtype);
-          if (resistVal >= 1.5) {
+          if (resistVal >= 1.0) {
             this.log(`<span class="actor-name">${target.name}</span> is immune to ${dtype} damage.`, 'status');
             return;
           }
           const effective = Math.floor(Math.max(0, raw) * (1 - resistVal));
           if (effective > 0) {
             target.currentHP -= effective;
-            this.log(`<span class="actor-name">${target.name}</span> suffers <span class="val">${effective}</span> ${dtype} from <span class="ability-name">${sourceName}</span>.`, 'damage');
+            this.log(`<span class="actor-name">${target.name}</span> suffers <span class="val">${effective}</span> ${dtype} damage from <span class="ability-name">${sourceName}</span>.`, 'damage');
             UI.floatText(target, `-${effective}`, 'damage');
             this._addThreat(target, effective);
           }
@@ -661,7 +665,7 @@ export class BattleEngine {
 
           // Resistance — applied to full effective damage.
           const resistVal = target.getEffectiveResistance(dtype);
-          if (resistVal >= 1.5) {
+          if (resistVal >= 1.0) {
             this.log(`<span class="actor-name">${target.name}</span> is immune to ${dtype} damage.`, 'status');
             UI.flashCard(target, 'hit-flash');
             return;
