@@ -160,7 +160,7 @@ export const UI = {
       el.className = 'ability-icon on-cd';
       el.dataset.abilityId = ab.id;
       el.innerHTML = `${ab.icon}<div class="cd-overlay" style="height:100%"></div>`;
-      el.addEventListener('mouseenter', e => Tooltips.showAbility(e, DATA.abilities[ab.id], ab.currentRank - 1));
+      el.addEventListener('mouseenter', e => Tooltips.showAbility(e, DATA.abilities[ab.id], ab.currentRank - 1, actor));
       el.addEventListener('mouseleave', () => Tooltips.hide());
       container.appendChild(el);
     });

@@ -166,6 +166,40 @@ function _isLocked() {
   return _getEngine()?.active === true;
 }
 
+// ── Helper: actor-like object for ability tooltips ────────────────────────
+// In battle  → returns the live ActorRuntime (has .stats, .statuses, full state).
+// Outside    → builds a lightweight plain object with stats computed from the
+//              paragon's current equipment + skill levels.
+function _actorForTooltip(paragonId) {
+  if (!paragonId) return null;
+
+  // Prefer the live engine actor when available.
+  const live = _getEngine()?.paragons.find(p => p.defId === paragonId);
+  if (live) return live;
+
+  const def = DATA.actors[paragonId];
+  if (!def) return null;
+  const ps       = _paragonState(paragonId);
+  const equipped = _getEquipped(paragonId);
+
+  const actor = {
+    subtype:            'paragon',
+    resourceType:       def.resource?.type    ?? 'energy',
+    maxHP:              def.baseHP,
+    currentHP:          def.baseHP,
+    maxArmor:           def.baseArmor,
+    currentArmor:       def.baseArmor,
+    baseSpeed:          def.globalSpeed       ?? 1.0,
+    equippedItems:      equipped,
+    skillLevels:        ps.skillLevels        ?? {},
+    equippedSkillTypes: ps.activeSkillTypes   ?? [],
+    passives:           [],
+    stats:              {},
+  };
+  computeActorStats(actor);
+  return actor;
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────
 
 export const ParagonUI = {
@@ -765,7 +799,8 @@ export const ParagonUI = {
       const id = slot.dataset.abilityId;
       if (!id) return;
       const ab = DATA.abilities[id];
-      if (ab) Tooltips.showAbility(e, ab, 0);
+      if (!ab) return;
+      Tooltips.showAbility(e, ab, 0, _actorForTooltip(_selectedId));
     });
     document.getElementById('paragon-skills')?.addEventListener('mouseleave', () => Tooltips.hide());
 
@@ -774,7 +809,8 @@ export const ParagonUI = {
       const row = e.target.closest('.abil-candidate');
       if (!row) return;
       const ab = DATA.abilities[row.dataset.abilityId];
-      if (ab) Tooltips.showAbility(e, ab, 0);
+      if (!ab) return;
+      Tooltips.showAbility(e, ab, 0, _actorForTooltip(_selectedId));
     });
     document.getElementById('selection-ability')?.addEventListener('mouseleave', () => Tooltips.hide());
 

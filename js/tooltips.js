@@ -66,39 +66,84 @@ export const Tooltips = {
   },
 
   // ── Ability tooltip ──────────────────────────────────────────────────────
-  // abilityDef : object from DATA.abilities  (has .name, .icon, .ranks[])
-  // rankIndex  : 0-based rank index (0 = Rank 1)
-  showAbility(e, abilityDef, rankIndex = 0) {
+  // abilityDef : object from DATA.abilities
+  // rankIndex  : 0-based rank index
+  // actor      : live ActorRuntime (optional) — used to apply stat bonuses to displayed values
+  showAbility(e, abilityDef, rankIndex = 0, actor = null) {
     const rank = abilityDef.ranks?.[rankIndex] ?? abilityDef.ranks?.[0];
     if (!rank) return;
-    const dtype = rank.damageType
-      ? ` <span style="color:var(--text-dim);font-size:0.75rem">(${rank.damageType})</span>`
-      : '';
+
+    // Stat-adjusted damage: applies flatDmg + type-specific bonuses from the actor's stats.
+    const effectiveDmg = (base, dtype) => {
+      if (!actor?.stats || !base) return base;
+      const s = actor.stats;
+      let d = base + (s.flatDmg ?? 0);
+      if (dtype === 'slashing')   d += s.slashingDmg   ?? 0;
+      if (dtype === 'fire')       d += s.fireDmgBonus  ?? 0;
+      if (dtype === 'void')       d += s.voidDmgBonus  ?? 0;
+      return Math.max(0, Math.round(d));
+    };
+
+    const dtypeSpan = t => t ? ` <span style="color:var(--text-dim);font-size:0.75rem">(${t})</span>` : '';
+    const RES_ABBR  = { energy: 'EN', rage: 'RG', resolve: 'RES', threat: 'THR', none: '' };
+    const resLabel  = actor ? (RES_ABBR[actor.resourceType] ?? actor.resourceType) : '';
 
     let html = `<strong>${abilityDef.icon ?? ''} ${abilityDef.name}</strong>`;
+
     if ((abilityDef.tags ?? []).length > 0) {
       const pills = abilityDef.tags.map(t => `<span class="tag-pill">${t[0].toUpperCase() + t.slice(1)}</span>`).join('');
       html += `<div class="tt-tags">${pills}</div>`;
     }
-    html += `<div class="tt-cd">CD: ${rank.cooldown}s</div>`;
-    if (rank.cost)         html += `<div class="tt-res">Cost: ${rank.cost.amount} ${rank.cost.type}</div>`;
-    if (rank.damage)       html += `<div class="tt-dmg">Damage: ${rank.damage}${dtype}</div>`;
-    if (rank.splashDmg)    html += `<div class="tt-dmg">Splash: ${rank.splashDmg}${dtype}</div>`;
-    if (rank.stunDuration) html += `<div>Stun: ${rank.stunDuration}s</div>`;
-    if (rank.rootDuration) html += `<div>Root: ${rank.rootDuration}s</div>`;
-    if (rank.stacks)       html += `<div>Bleed: +${rank.stacks} stacks (${rank.duration}s)</div>`;
-    if (rank.burnChance && rank.burnChance > 0)
-                           html += `<div>Burn chance: ${Math.round(rank.burnChance * 100)}%</div>`;
-    if (rank.burnStacks)   html += `<div>Burn: +${rank.burnStacks} stacks (8s)</div>`;
-    if (rank.slowStacks)   html += `<div>Slow: +${rank.slowStacks} stacks (${rank.slowDuration}s)</div>`;
-    if (rank.hasteStacks)  html += `<div>Haste: +${rank.hasteStacks} stacks (${rank.hasteDuration}s)</div>`;
-    if (rank.guardStacks)  html += `<div>Guard: +${rank.guardStacks} stacks (12s)</div>`;
-    if (rank.healHp)       html += `<div>Heal: ${rank.healHp} HP</div>`;
-    if (rank.armorRestore) html += `<div>Restore Armor: +${rank.armorRestore}</div>`;
-    if (rank.threatDrain)  html += `<div>Drain Threat: ${rank.threatDrain}</div>`;
-    if (rank.selfThreat)   html += `<div>Gain Threat: +${rank.selfThreat}</div>`;
-    html += `<div style="margin-top:4px;font-style:italic;color:#7a6e8a">Rank ${rankIndex + 1}</div>`;
 
+    html += `<div class="tt-cd">CD: ${rank.cooldown}s</div>`;
+
+    if (rank.cost) {
+      html += `<div class="tt-res">Cost: ${rank.cost}${resLabel ? ` ${resLabel}` : ''}</div>`;
+    }
+
+    // ── Damage ───────────────────────────────────────────────────────────
+    if (rank.damage) {
+      const eff     = effectiveDmg(rank.damage, rank.damageType);
+      const hasBonus = actor?.stats && eff !== rank.damage;
+      html += `<div class="tt-dmg">Damage: ${eff}${hasBonus ? ` <span style="color:var(--text-dim);font-size:0.73rem">(base ${rank.damage})</span>` : ''}${dtypeSpan(rank.damageType)}</div>`;
+    }
+    if (rank.splashDmg) {
+      const eff = effectiveDmg(rank.splashDmg, rank.damageType);
+      html += `<div class="tt-dmg">Splash: ${eff}${dtypeSpan(rank.damageType)}</div>`;
+    }
+    if (rank.armorDamage) {
+      html += `<div class="tt-dmg">Armor Damage: ${rank.armorDamage}</div>`;
+    }
+
+    // ── Heals & restores ─────────────────────────────────────────────────
+    if (rank.healAmount || rank.healHp) {
+      html += `<div>Heal: ${rank.healAmount ?? rank.healHp} HP</div>`;
+    }
+    if (rank.armorAmount || rank.armorRestore) {
+      html += `<div>Restore Armor: +${rank.armorAmount ?? rank.armorRestore}</div>`;
+    }
+    if (rank.resourceAmount) {
+      html += `<div>Restore Resource: +${rank.resourceAmount}${resLabel ? ` ${resLabel}` : ''}</div>`;
+    }
+
+    // ── Status effects ────────────────────────────────────────────────────
+    if (rank.guardStacks)       html += `<div>Guard: +${rank.guardStacks} stacks (${rank.guardStacks * 2}s)</div>`;
+    if (rank.hasteStacks)       html += `<div>Haste: +${rank.hasteStacks} stacks (${rank.hasteStacks * 2}s)</div>`;
+    if (rank.slowStacks)        html += `<div>Slow: +${rank.slowStacks} stacks (${rank.slowStacks * 2}s)</div>`;
+    if (rank.stacks)            html += `<div>Bleed: +${rank.stacks} stacks (${rank.stacks * 2}s)</div>`;
+    if (rank.regenStacks)       html += `<div>Regen: +${rank.regenStacks} stacks (${rank.regenStacks * 2}s)</div>`;
+    if (rank.poisonStacks)      html += `<div>Poison: +${rank.poisonStacks} stacks (${rank.poisonStacks * 2}s)</div>`;
+    if (rank.blurStacks)        html += `<div>Blur: +${rank.blurStacks} stacks (${rank.blurStacks * 2}s)</div>`;
+    if (rank.energizeStacks)    html += `<div>Energize: +${rank.energizeStacks} stacks (${rank.energizeStacks * 2}s)</div>`;
+    if (rank.retaliationStacks) html += `<div>Retaliation: +${rank.retaliationStacks} stacks</div>`;
+    if (rank.burnChance > 0)    html += `<div>Burn chance: ${Math.round(rank.burnChance * 100)}%</div>`;
+    if (rank.burnStacks)        html += `<div>Burn: +${rank.burnStacks} stacks</div>`;
+
+    // ── Threat ───────────────────────────────────────────────────────────
+    if (rank.threatDrain) html += `<div>Drain Threat: ${rank.threatDrain}</div>`;
+    if (rank.selfThreat)  html += `<div>Gain Threat: +${rank.selfThreat}</div>`;
+
+    html += `<div style="margin-top:4px;font-style:italic;color:#7a6e8a">Rank ${rankIndex + 1}</div>`;
     this.showRaw(html, e);
   },
 
