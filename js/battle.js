@@ -78,8 +78,8 @@ export class ActorRuntime {
     this.phase2Active = false;
 
     // Boss specifics
-    this.specialAttack     = def.specialAttack || null;
-    this.phase2SpecialAttack = def.phase2SpecialAttack || null;
+    this.specialAttack       = def.specialAttackId       ? DATA.abilities[def.specialAttackId]       : null;
+    this.phase2SpecialAttack = def.phase2SpecialAttackId ? DATA.abilities[def.phase2SpecialAttackId] : null;
     this.phase2Abilities   = def.phase2Abilities || null;
 
     // Equipped items — loot bookkeeping; does not affect combat stats
@@ -966,8 +966,9 @@ export class BattleEngine {
     const playerAlive = this.paragons.filter(p => !p.isDead);
     if (playerAlive.length === 0) return;
 
+    const specialRank = special.ranks?.[0] ?? {};
     this.log(`⚠ <span class="actor-name">${actor.name}</span> unleashes <span class="ability-name">${special.name}</span>!`, 'special');
-    const effects = special.execute(actor, playerAlive);
+    const effects = special.execute(actor, playerAlive, specialRank);
     effects.forEach(fx => {
       if (!fx.target || fx.target.isDead) return;
       this._applyEffect(actor, fx, special.name);

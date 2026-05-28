@@ -324,14 +324,8 @@ export const UI = {
     const sp = actor.phase2Active && actor.phase2SpecialAttack
       ? actor.phase2SpecialAttack
       : actor.specialAttack;
-    const resourceLabel = actor.resourceType === 'threat' ? 'Threat' : 'Rage';
-    let html = `<strong>${sp.icon} ${sp.name}</strong>`;
-    html += `<div style="color:var(--text-void);font-size:0.75rem;margin-top:3px">Activates at 100 ${resourceLabel}</div>`;
-    if (sp.isPhaseTransition)
-      html += `<div style="color:var(--text-gold);font-size:0.75rem;margin-top:2px">— Phase Transition —</div>`;
-    if (!actor.phase2Active && actor.phase2SpecialAttack)
-      html += `<div style="color:var(--text-dim);font-size:0.72rem;margin-top:2px">Phase 2 special unlocks after transition</div>`;
-    Tooltips.showRaw(html, e);
+    if (!sp) return;
+    Tooltips.showAbility(e, sp, 0, null, true);
   },
 
   // ── Event track ────────────────────────────────────────────────────────

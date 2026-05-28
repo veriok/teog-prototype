@@ -21,13 +21,7 @@ export const actors = {
       [DamageType.NATURE]:      ResistanceKeyword.VULNERABLE,
       [DamageType.BLUDGEONING]: ResistanceKeyword.VULNERABLE,
     },
-    specialAttack: {
-      name: 'Desperate Flail', icon: '💥',
-      execute(caster, targets) {
-        const t = targets[Math.floor(Math.random() * targets.length)];
-        return [{ type: 'damage', target: t, amount: 25, damageType: 'bludgeoning', ignoresGuard: true, source: 'Desperate Flail' }];
-      }
-    },
+    specialAttackId: 'desperate_flail',
     dropTable: [
       { definitionId: 'drowned_sword',  chance: 0.50, unique: false },
       { definitionId: 'drowned_shield', chance: 0.30, unique: false },
@@ -52,13 +46,7 @@ export const actors = {
       [DamageType.NATURE]:      ResistanceKeyword.VULNERABLE,
       [DamageType.BLUDGEONING]: ResistanceKeyword.VULNERABLE,
     },
-    specialAttack: {
-      name: 'Desperate Flail', icon: '💥',
-      execute(caster, targets) {
-        const t = targets[Math.floor(Math.random() * targets.length)];
-        return [{ type: 'damage', target: t, amount: 25, damageType: 'bludgeoning', ignoresGuard: true, source: 'Desperate Flail' }];
-      }
-    },
+    specialAttackId: 'desperate_flail',
     dropTable: [
       { definitionId: 'drowned_sword',  chance: 0.50, unique: false },
       { definitionId: 'drowned_shield', chance: 0.30, unique: false },
@@ -83,15 +71,7 @@ export const actors = {
       [DamageType.NATURE]:      ResistanceKeyword.VULNERABLE,
       [DamageType.BLUDGEONING]: ResistanceKeyword.VULNERABLE,
     },
-    specialAttack: {
-      name: 'Headshot', icon: '🎯',
-      execute(caster, targets) {
-        const t = targets[Math.floor(Math.random() * targets.length)];
-        const effects = [{ type: 'damage', target: t, amount: 35, damageType: 'piercing', source: 'Headshot' }];
-        if (Math.random() < 0.5) effects.push({ type: 'apply_status', target: t, statusId: 'stun', stacks: 1, duration: 1.0 });
-        return effects;
-      }
-    },
+    specialAttackId: 'headshot',
     dropTable: [
       { definitionId: 'drowned_sword', chance: 0.25, unique: false },
     ],
@@ -116,16 +96,7 @@ export const actors = {
       [DamageType.NATURE]:      ResistanceKeyword.VULNERABLE,
       [DamageType.BLUDGEONING]: ResistanceKeyword.VULNERABLE,
     },
-    specialAttack: {
-      name: "Warden's Wrath", icon: '🔨',
-      execute(caster, targets) {
-        const maxHpTarget = targets.reduce((a, b) => a.currentHP > b.currentHP ? a : b);
-        return [
-          { type: 'damage', target: maxHpTarget, amount: 45, damageType: 'bludgeoning', source: "Warden's Wrath" },
-          ...targets.map(t => ({ type: 'apply_status', target: t, statusId: 'slow', stacks: 2, duration: 4 }))
-        ];
-      }
-    },
+    specialAttackId: 'wardens_wrath',
     dropTable: [
       { definitionId: 'warden_helm', chance: 0.40, unique: false },
     ],
@@ -156,26 +127,11 @@ export const actors = {
       [DamageType.NATURE]:      ResistanceKeyword.VULNERABLE,
       [DamageType.BLUDGEONING]: ResistanceKeyword.VULNERABLE,
     },
-    specialAttack: {
-      name: 'Rising Tide', icon: '🌊', isPhaseTransition: true,
-      execute(caster, targets) {
-        const effects = targets.map(t => ({ type: 'damage', target: t, amount: 35, damageType: 'bludgeoning', source: 'Rising Tide' }));
-        targets.forEach(t => effects.push({ type: 'apply_status', target: t, statusId: 'bleeding', stacks: 2, duration: 8 }));
-        effects.push({ type: 'restore_armor', target: caster, amount: 60 });
-        return effects;
-      }
-    },
+    specialAttackId: 'rising_tide',
     dropTable: [
       { definitionId: 'sergeant_medallion', chance: 1.00, unique: true },
       { definitionId: 'drowned_sword',      chance: 0.80, unique: false },
     ],
-    phase2SpecialAttack: {
-      name: 'The Deep Takes All', icon: '🌑',
-      execute(caster, targets) {
-        const effects = targets.map(t => ({ type: 'damage', target: t, amount: 50, damageType: 'true', source: 'The Deep Takes All' }));
-        targets.forEach(t => effects.push({ type: 'apply_status', target: t, statusId: 'slow', stacks: 3, duration: 6 }));
-        return effects;
-      }
-    }
+    phase2SpecialAttackId: 'deep_takes_all',
   },
 };

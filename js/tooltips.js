@@ -69,47 +69,85 @@ export const Tooltips = {
   // abilityDef : object from DATA.abilities
   // rankIndex  : 0-based rank index
   // actor      : live ActorRuntime (optional) — used to apply stat bonuses to displayed values
-  showAbility(e, abilityDef, rankIndex = 0, actor = null) {
+  showAbility(e, abilityDef, rankIndex = 0, actor = null, threat = false) {
     const rank = abilityDef.ranks?.[rankIndex] ?? abilityDef.ranks?.[0];
     if (!rank) return;
 
+    // Resolve ability-level damageType array.
+    const dtypes       = abilityDef.damageType ?? [];
+    const isMixed      = dtypes.length > 1;
+    const dtypeLabel   = isMixed ? `random (${dtypes.join('/')})` : (dtypes[0] ?? null);
+    const dtypeForBonus = isMixed ? null : (dtypes[0] ?? null);
+
     // Stat-adjusted damage: applies flatDmg + type-specific bonuses from the actor's stats.
-    const effectiveDmg = (base, dtype) => {
+    const effectiveDmg = (base) => {
       if (!actor?.stats || !base) return base;
       const s = actor.stats;
       let d = base + (s.flatDmg ?? 0);
-      if (dtype === 'slashing')   d += s.slashingDmg   ?? 0;
-      if (dtype === 'fire')       d += s.fireDmgBonus  ?? 0;
-      if (dtype === 'void')       d += s.voidDmgBonus  ?? 0;
+      if (dtypeForBonus === DamageType.SLASHING) d += s.slashingDmg  ?? 0;
+      if (dtypeForBonus === DamageType.FIRE)     d += s.fireDmgBonus ?? 0;
+      if (dtypeForBonus === DamageType.VOID)     d += s.voidDmgBonus ?? 0;
       return Math.max(0, Math.round(d));
     };
 
-    const dtypeSpan = t => t ? ` <span style="color:var(--text-dim);font-size:0.75rem">(${t})</span>` : '';
+    // Effective cost: rage pays 25%, resolve pays 33%.
+    const effCost = (base) => {
+      if (!base || !actor) return base;
+      if (actor.resourceType === 'rage')    return Math.ceil(base * 0.25);
+      if (actor.resourceType === 'resolve') return Math.ceil(base * 0.33);
+      return base;
+    };
+
+    // Damage-type emoji map.
+    const DTYPE_EMOJI = {
+      slashing:    '🗡️',
+      piercing:    '🏹',
+      bludgeoning: '🔨',
+      fire:        '🔥',
+      cold:        '❄️',
+      lightning:   '⚡',
+      void:        '🌑',
+      arcana:      '✨',
+      nature:      '🌿',
+      true:        '💀',
+    };
+    const dtypeSpan = isMixed
+      ? ` ${dtypes.map(d => DTYPE_EMOJI[d] ?? d).join(' / ')}`
+      : (dtypes[0] ? ` ${DTYPE_EMOJI[dtypes[0]] ?? dtypes[0]}` : '');
     const RES_ABBR  = { energy: 'EN', rage: 'RG', resolve: 'RES', threat: 'THR', none: '' };
     const resLabel  = actor ? (RES_ABBR[actor.resourceType] ?? actor.resourceType) : '';
 
     let html = `<strong>${abilityDef.icon ?? ''} ${abilityDef.name}</strong>`;
+
+    if (threat) {
+      html += `<div class="tt-threat-label">Threat Ability</div>`;
+    }
 
     if ((abilityDef.tags ?? []).length > 0) {
       const pills = abilityDef.tags.map(t => `<span class="tag-pill">${t[0].toUpperCase() + t.slice(1)}</span>`).join('');
       html += `<div class="tt-tags">${pills}</div>`;
     }
 
-    html += `<div class="tt-cd">CD: ${rank.cooldown}s</div>`;
+    if (rank.cooldown != null) {
+      html += `<div class="tt-cd">CD: ${rank.cooldown}s</div>`;
+    }
 
-    if (rank.cost) {
-      html += `<div class="tt-res">Cost: ${rank.cost}${resLabel ? ` ${resLabel}` : ''}</div>`;
+    if (threat) {
+      html += `<div class="tt-threat-cost">Always cast at 100% Threat</div>`;
+    } else if (rank.cost) {
+      const displayed = effCost(rank.cost);
+      html += `<div class="tt-res">Cost: ${displayed}${resLabel ? ` ${resLabel}` : ''}</div>`;
+    }
+    if (threat && abilityDef.isPhaseTransition) {
+      html += `<div class="tt-phase-transition">— Phase Transition —</div>`;
     }
 
     // ── Damage ───────────────────────────────────────────────────────────
     if (rank.damage) {
-      const eff     = effectiveDmg(rank.damage, rank.damageType);
-      const hasBonus = actor?.stats && eff !== rank.damage;
-      html += `<div class="tt-dmg">Damage: ${eff}${hasBonus ? ` <span style="color:var(--text-dim);font-size:0.73rem">(base ${rank.damage})</span>` : ''}${dtypeSpan(rank.damageType)}</div>`;
+      html += `<div class="tt-dmg">Damage: ${effectiveDmg(rank.damage)}${dtypeSpan}</div>`;
     }
     if (rank.splashDmg) {
-      const eff = effectiveDmg(rank.splashDmg, rank.damageType);
-      html += `<div class="tt-dmg">Splash: ${eff}${dtypeSpan(rank.damageType)}</div>`;
+      html += `<div class="tt-dmg">Splash: ${effectiveDmg(rank.splashDmg)}${dtypeSpan}</div>`;
     }
     if (rank.armorDamage) {
       html += `<div class="tt-dmg">Armor Damage: ${rank.armorDamage}</div>`;
@@ -136,14 +174,18 @@ export const Tooltips = {
     if (rank.blurStacks)        html += `<div>Blur: +${rank.blurStacks} stacks (${rank.blurStacks * 2}s)</div>`;
     if (rank.energizeStacks)    html += `<div>Energize: +${rank.energizeStacks} stacks (${rank.energizeStacks * 2}s)</div>`;
     if (rank.retaliationStacks) html += `<div>Retaliation: +${rank.retaliationStacks} stacks</div>`;
+    if (rank.stunChance > 0)    html += `<div>Stun chance: ${Math.round(rank.stunChance * 100)}%</div>`;
     if (rank.burnChance > 0)    html += `<div>Burn chance: ${Math.round(rank.burnChance * 100)}%</div>`;
     if (rank.burnStacks)        html += `<div>Burn: +${rank.burnStacks} stacks</div>`;
+    if (rank.ignoresGuard)      html += `<div style="color:var(--text-dim);font-size:0.73rem">Ignores Guard</div>`;
 
     // ── Threat ───────────────────────────────────────────────────────────
     if (rank.threatDrain) html += `<div>Drain Threat: ${rank.threatDrain}</div>`;
     if (rank.selfThreat)  html += `<div>Gain Threat: +${rank.selfThreat}</div>`;
 
-    html += `<div style="margin-top:4px;font-style:italic;color:#7a6e8a">Rank ${rankIndex + 1}</div>`;
+    if (!threat) {
+      html += `<div style="margin-top:4px;font-style:italic;color:#7a6e8a">Rank ${rankIndex + 1}</div>`;
+    }
     this.showRaw(html, e);
   },
 

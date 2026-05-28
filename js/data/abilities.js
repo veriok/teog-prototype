@@ -1,6 +1,11 @@
-// js/data/abilities.js
+﻿// js/data/abilities.js
 
-import { SkillType, AbilityTag } from '../enums.js';
+import { SkillType, AbilityTag, DamageType } from '../enums.js';
+
+/** Picks a random damage type from an ability's damageType array. */
+function pickDmgType(types) {
+  return types[Math.floor(Math.random() * types.length)];
+}
 
 export const abilities = {
 
@@ -8,20 +13,23 @@ export const abilities = {
   sword_slash: {
     id: 'sword_slash', name: 'Sword Slash', icon: '⚔️',
     tree: SkillType.SWORD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.SLASHING],
     ranks: [
-      { rank: 1, cooldown: 2.5, cost: null, damage: 18, damageType: 'slashing', levelRequired: 1, autoLearn: true },
-      { rank: 2, cooldown: 2.5, cost: null, damage: 26, damageType: 'slashing', levelRequired: 4, autoLearn: true },
-      { rank: 3, cooldown: 2.5, cost: null, damage: 35, damageType: 'slashing', levelRequired: 8, autoLearn: true },
+      { rank: 1, cooldown: 2.5, cost: null, damage: 18, levelRequired: 1, autoLearn: true },
+      { rank: 2, cooldown: 2.5, cost: null, damage: 26, levelRequired: 4, autoLearn: true },
+      { rank: 3, cooldown: 2.5, cost: null, damage: 35, levelRequired: 8, autoLearn: true },
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: rank.damageType }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
 
   rend: {
     id: 'rend', name: 'Rend', icon: '🗡️',
     tree: SkillType.SWORD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.SLASHING],
     ranks: [
       { rank: 1, cooldown: 5.0, cost: 45, damage: 14, stacks: 1, levelRequired: 2, autoLearn: true },
       { rank: 2, cooldown: 5.0, cost: 45, damage: 20, stacks: 2, levelRequired: 5, autoLearn: true },
@@ -29,8 +37,9 @@ export const abilities = {
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'slashing' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: targets[0], statusId: 'bleeding', stacks: rank.stacks }
       ];
     }
@@ -39,6 +48,7 @@ export const abilities = {
   shield_bash: {
     id: 'shield_bash', name: 'Shield Bash', icon: '🛡️',
     tree: SkillType.SHIELD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 6.0, cost: null, damage: 10, levelRequired: 3, autoLearn: true },
       { rank: 2, cooldown: 5.5, cost: null, damage: 16, levelRequired: 6, autoLearn: true },
@@ -46,8 +56,9 @@ export const abilities = {
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: targets[0], statusId: 'stun', stacks: 1 }
       ];
     }
@@ -93,6 +104,7 @@ export const abilities = {
   ember_shot: {
     id: 'ember_shot', name: 'Ember Shot', icon: '🔥',
     tree: SkillType.FIRE, tags: [AbilityTag.RANGED],
+    damageType: [DamageType.FIRE],
     ranks: [
       { rank: 1, cooldown: 2.8, cost: null, damage: 20, burnChance: 0,   levelRequired: 1, autoLearn: true },
       { rank: 2, cooldown: 2.8, cost: null, damage: 28, burnChance: 0,   levelRequired: 4, autoLearn: true },
@@ -100,7 +112,8 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
-      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'fire' }];
+      const dmgType = pickDmgType(this.damageType);
+      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
       if (rank.burnChance > 0 && Math.random() < rank.burnChance) {
         effects.push({ type: 'apply_status', target: targets[0], statusId: 'burning', stacks: 1 });
       }
@@ -111,6 +124,7 @@ export const abilities = {
   fireball: {
     id: 'fireball', name: 'Fireball', icon: '💥',
     tree: SkillType.FIRE, tags: [AbilityTag.RANGED],
+    damageType: [DamageType.FIRE],
     ranks: [
       { rank: 1, cooldown: 5.5, cost: 40, damage: 35, splashDmg: 15, burnStacks: 0, levelRequired: 1, autoLearn: true },
       { rank: 2, cooldown: 5.2, cost: 40, damage: 48, splashDmg: 22, burnStacks: 0, levelRequired: 4, autoLearn: true },
@@ -118,8 +132,9 @@ export const abilities = {
     ],
     targeting: 'single_enemy_with_splash',
     execute(caster, targets, rank) {
-      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'fire' }];
-      if (targets[1]) effects.push({ type: 'damage', target: targets[1], amount: rank.splashDmg, damageType: 'fire' });
+      const dmgType = pickDmgType(this.damageType);
+      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
+      if (targets[1]) effects.push({ type: 'damage', target: targets[1], amount: rank.splashDmg, damageType: dmgType });
       if (rank.burnStacks > 0) {
         targets.forEach(t => effects.push({ type: 'apply_status', target: t, statusId: 'burning', stacks: rank.burnStacks }));
       }
@@ -130,6 +145,7 @@ export const abilities = {
   void_bolt: {
     id: 'void_bolt', name: 'Void Bolt', icon: '🌑',
     tree: SkillType.VOID, tags: [AbilityTag.RANGED],
+    damageType: [DamageType.VOID],
     ranks: [
       { rank: 1, cooldown: 3.0, cost: null, damage: 18,                               levelRequired: 1, autoLearn: true },
       { rank: 2, cooldown: 3.0, cost: null, damage: 25,                               levelRequired: 4, autoLearn: true },
@@ -137,7 +153,8 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
-      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'void' }];
+      const dmgType = pickDmgType(this.damageType);
+      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
       if (rank.slowStacks) effects.push({ type: 'apply_status', target: targets[0], statusId: 'slow', stacks: rank.slowStacks });
       if (rank.voidExposeChance && Math.random() < rank.voidExposeChance) {
         effects.push({ type: 'apply_status', target: targets[0], statusId: 'void_vulnerability', stacks: 1 });
@@ -168,6 +185,7 @@ export const abilities = {
   wave_strike: {
     id: 'wave_strike', name: 'Wave Strike', icon: '🌊',
     tree: SkillType.FLOOD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 3.0, cost: null, damage: 16, levelRequired: 1,  autoLearn: true },
       { rank: 2, cooldown: 2.8, cost: null, damage: 24, levelRequired: 5,  autoLearn: true },
@@ -175,15 +193,15 @@ export const abilities = {
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
-      return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' }
-      ];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
 
   tide_surge: {
     id: 'tide_surge', name: 'Tide Surge', icon: '💧',
     tree: SkillType.FLOOD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 7.0, cost: 45, damage: 10, slowStacks: 1, levelRequired: 3,  autoLearn: true },
       { rank: 2, cooldown: 6.5, cost: 45, damage: 15, slowStacks: 1, levelRequired: 5,  autoLearn: true },
@@ -191,8 +209,9 @@ export const abilities = {
     ],
     targeting: 'all_enemies',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return targets.flatMap(t => [
-        { type: 'damage', target: t, amount: rank.damage, damageType: 'bludgeoning' },
+        { type: 'damage', target: t, amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: t, statusId: 'slow', stacks: rank.slowStacks },
       ]);
     }
@@ -201,6 +220,7 @@ export const abilities = {
   drowning_grasp: {
     id: 'drowning_grasp', name: 'Drowning Grasp', icon: '🫧',
     tree: SkillType.FLOOD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 9.0, cost: 60, damage: 20, levelRequired: 5,  autoLearn: true },
       { rank: 2, cooldown: 8.5, cost: 60, damage: 28, levelRequired: 8,  autoLearn: true },
@@ -208,8 +228,9 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: targets[0], statusId: 'root', stacks: 1 },
       ];
     }
@@ -218,6 +239,7 @@ export const abilities = {
   tidal_wave: {
     id: 'tidal_wave', name: 'Tidal Wave', icon: '🌀',
     tree: SkillType.FLOOD, tags: [AbilityTag.SPELL],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 14.0, cost: 75, damage: 22, levelRequired: 8,  autoLearn: true },
       { rank: 2, cooldown: 13.0, cost: 75, damage: 32, levelRequired: 12, autoLearn: true },
@@ -225,7 +247,8 @@ export const abilities = {
     ],
     targeting: 'all_enemies',
     execute(caster, targets, rank) {
-      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'bludgeoning' }));
+      const dmgType = pickDmgType(this.damageType);
+      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: dmgType }));
     }
   },
 
@@ -233,6 +256,7 @@ export const abilities = {
   staff_strike: {
     id: 'staff_strike', name: 'Staff Strike', icon: '🪄',
     tree: SkillType.STAFF, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 2.2, cost: null, damage: 14, levelRequired: 1,  autoLearn: true },
       { rank: 2, cooldown: 2.0, cost: null, damage: 20, levelRequired: 5,  autoLearn: true },
@@ -240,13 +264,15 @@ export const abilities = {
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
 
   crushing_blow: {
     id: 'crushing_blow', name: 'Crushing Blow', icon: '💥',
     tree: SkillType.STAFF, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 7.0, cost: 25, damage: 26, levelRequired: 1,  autoLearn: true },
       { rank: 2, cooldown: 6.5, cost: 25, damage: 36, levelRequired: 5,  autoLearn: true },
@@ -254,8 +280,9 @@ export const abilities = {
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: targets[0], statusId: 'stun', stacks: 1 },
       ];
     }
@@ -280,6 +307,7 @@ export const abilities = {
   sweeping_arc: {
     id: 'sweeping_arc', name: 'Sweeping Arc', icon: '🌙',
     tree: SkillType.STAFF, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 6.0, cost: 30, damage: 12, levelRequired: 1,  autoLearn: true },
       { rank: 2, cooldown: 5.5, cost: 30, damage: 18, levelRequired: 5,  autoLearn: true },
@@ -287,7 +315,8 @@ export const abilities = {
     ],
     targeting: 'cleave',
     execute(caster, targets, rank) {
-      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'bludgeoning' }));
+      const dmgType = pickDmgType(this.damageType);
+      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: dmgType }));
     }
   },
 
@@ -295,6 +324,7 @@ export const abilities = {
   shield_strike: {
     id: 'shield_strike', name: 'Shield Strike', icon: '🛡️',
     tree: SkillType.SHIELD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 2.5, cost: null, damage: 14, levelRequired: 1, autoLearn: true },
       { rank: 2, cooldown: 2.5, cost: null, damage: 20, levelRequired: 4, autoLearn: true },
@@ -302,7 +332,8 @@ export const abilities = {
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
 
@@ -365,6 +396,7 @@ export const abilities = {
   retribution: {
     id: 'retribution', name: 'Retribution', icon: '⚖️',
     tree: SkillType.SHIELD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 10.0, cost: null, damage: 20, levelRequired: 1, autoLearn: false },
       { rank: 2, cooldown:  9.5, cost: null, damage: 28, levelRequired: 8, autoLearn: false },
@@ -372,10 +404,11 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       const missingFraction = 1 - (caster.currentHP / caster.maxHP);
       const bonus = Math.min(0.5, missingFraction * 0.51);
       const finalDamage = Math.round(rank.damage * (1 + bonus));
-      return [{ type: 'damage', target: targets[0], amount: finalDamage, damageType: 'bludgeoning' }];
+      return [{ type: 'damage', target: targets[0], amount: finalDamage, damageType: dmgType }];
     }
   },
 
@@ -383,6 +416,7 @@ export const abilities = {
   piercing_thrust: {
     id: 'piercing_thrust', name: 'Piercing Thrust', icon: '🗡️',
     tree: SkillType.SWORD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.PIERCING],
     ranks: [
       { rank: 1, cooldown: 4.5, cost: 60, damage: 22, levelRequired: 5,  autoLearn: true },
       { rank: 2, cooldown: 4.5, cost: 60, damage: 32, levelRequired: 9,  autoLearn: true },
@@ -390,13 +424,15 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'piercing' }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
 
   parry: {
     id: 'parry', name: 'Parry', icon: '🔄',
     tree: SkillType.SWORD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.SLASHING],
     ranks: [
       { rank: 1, cooldown: 8.0, cost: 75, damage: 20, levelRequired: 8,  autoLearn: true },
       { rank: 2, cooldown: 7.5, cost: 75, damage: 28, levelRequired: 11, autoLearn: true },
@@ -404,8 +440,9 @@ export const abilities = {
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'slashing' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: caster, statusId: 'guard', stacks: 1 },
       ];
     }
@@ -414,6 +451,7 @@ export const abilities = {
   blade_cleave: {
     id: 'blade_cleave', name: 'Blade Cleave', icon: '🌙',
     tree: SkillType.SWORD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.SLASHING],
     ranks: [
       { rank: 1, cooldown: 7.0, cost: 90, damage: 20, levelRequired: 11, autoLearn: true },
       { rank: 2, cooldown: 6.5, cost: 90, damage: 28, levelRequired: 13, autoLearn: true },
@@ -421,13 +459,15 @@ export const abilities = {
     ],
     targeting: 'cleave',
     execute(caster, targets, rank) {
-      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'slashing' }));
+      const dmgType = pickDmgType(this.damageType);
+      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: dmgType }));
     }
   },
 
   flaming_blade: {
     id: 'flaming_blade', name: 'Flaming Blade', icon: '🔥',
     tree: SkillType.SWORD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.FIRE],
     ranks: [
       { rank: 1, cooldown: 6.0, cost: 110, damage: 26, levelRequired: 15, autoLearn: true },
       { rank: 2, cooldown: 5.5, cost: 110, damage: 36, levelRequired: 18, autoLearn: false },
@@ -435,8 +475,9 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'fire' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: targets[0], statusId: 'fire_vulnerable', stacks: 1 },
       ];
     }
@@ -445,6 +486,7 @@ export const abilities = {
   decapitate: {
     id: 'decapitate', name: 'Decapitate', icon: '💀',
     tree: SkillType.SWORD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.TRUE],
     ranks: [
       { rank: 1, cooldown: 16.0, cost: 120, damage: 60,  levelRequired: 1, autoLearn: false },
       { rank: 2, cooldown: 15.0, cost: 120, damage: 85,  levelRequired: 8, autoLearn: false },
@@ -452,13 +494,15 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'true', ignoresGuard: true }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType, ignoresGuard: true }];
     }
   },
 
   riposte: {
     id: 'riposte', name: 'Riposte', icon: '⚔️',
     tree: SkillType.SWORD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.PIERCING],
     ranks: [
       { rank: 1, cooldown: 6.5, cost: 80, damage: 22, levelRequired: 1, autoLearn: false },
       { rank: 2, cooldown: 6.0, cost: 80, damage: 32, levelRequired: 8, autoLearn: false },
@@ -466,8 +510,9 @@ export const abilities = {
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'piercing' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: caster, statusId: 'guard', stacks: 2 },
       ];
     }
@@ -477,6 +522,7 @@ export const abilities = {
   icy_current: {
     id: 'icy_current', name: 'Icy Current', icon: '🧊',
     tree: SkillType.FLOOD, tags: [AbilityTag.SPELL],
+    damageType: [DamageType.COLD],
     ranks: [
       { rank: 1, cooldown: 5.0, cost: 85, damage: 24, levelRequired: 11, autoLearn: true },
       { rank: 2, cooldown: 4.8, cost: 85, damage: 34, levelRequired: 13, autoLearn: true },
@@ -484,13 +530,15 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'cold' }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
 
   undertow: {
     id: 'undertow', name: 'Undertow', icon: '🌀',
     tree: SkillType.FLOOD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 10.0, cost: 100, damage: 38, levelRequired: 15, autoLearn: true },
       { rank: 2, cooldown:  9.5, cost: 100, damage: 52, levelRequired: 18, autoLearn: false },
@@ -498,7 +546,8 @@ export const abilities = {
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
-      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' }];
+      const dmgType = pickDmgType(this.damageType);
+      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
       if (Math.random() < 0.5) effects.push({ type: 'apply_status', target: targets[0], statusId: 'stun', stacks: 1 });
       return effects;
     }
@@ -507,6 +556,7 @@ export const abilities = {
   maelstrom: {
     id: 'maelstrom', name: 'Maelstrom', icon: '🌊',
     tree: SkillType.FLOOD, tags: [AbilityTag.SPELL],
+    damageType: [DamageType.COLD],
     ranks: [
       { rank: 1, cooldown: 16.0, cost: 120, damage: 28, levelRequired: 1, autoLearn: false },
       { rank: 2, cooldown: 15.0, cost: 120, damage: 40, levelRequired: 8, autoLearn: false },
@@ -514,13 +564,15 @@ export const abilities = {
     ],
     targeting: 'all_enemies',
     execute(caster, targets, rank) {
-      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'cold' }));
+      const dmgType = pickDmgType(this.damageType);
+      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: dmgType }));
     }
   },
 
   consuming_torrent: {
     id: 'consuming_torrent', name: 'Consuming Torrent', icon: '💧',
     tree: SkillType.FLOOD, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 14.0, cost: 110, damage: 48, restoreResourceOnKill: 90, levelRequired: 1, autoLearn: false },
       { rank: 2, cooldown: 13.0, cost: 110, damage: 66, restoreResourceOnKill: 90, levelRequired: 8, autoLearn: false },
@@ -528,7 +580,8 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
 
@@ -536,6 +589,7 @@ export const abilities = {
   double_hit: {
     id: 'double_hit', name: 'Double Hit', icon: '✌️',
     tree: SkillType.STAFF, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 6.0, cost: 35, damage: 18, levelRequired: 11, autoLearn: true },
       { rank: 2, cooldown: 5.5, cost: 35, damage: 25, levelRequired: 13, autoLearn: true },
@@ -543,9 +597,10 @@ export const abilities = {
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
       ];
     }
   },
@@ -553,6 +608,7 @@ export const abilities = {
   lightning_rod: {
     id: 'lightning_rod', name: 'Lightning Rod', icon: '⚡',
     tree: SkillType.STAFF, tags: [AbilityTag.SPELL],
+    damageType: [DamageType.LIGHTNING],
     ranks: [
       { rank: 1, cooldown: 7.0, cost: 45, damage: 30, levelRequired: 15, autoLearn: true },
       { rank: 2, cooldown: 6.5, cost: 45, damage: 42, levelRequired: 18, autoLearn: false },
@@ -560,13 +616,15 @@ export const abilities = {
     ],
     targeting: 'random_enemy',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'lightning' }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
 
   lunge: {
     id: 'lunge', name: 'Lunge', icon: '🏃',
     tree: SkillType.STAFF, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 5.0, cost: 35, damage: 24, levelRequired: 1, autoLearn: false },
       { rank: 2, cooldown: 4.7, cost: 35, damage: 34, levelRequired: 8, autoLearn: false },
@@ -574,7 +632,8 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
-      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' }];
+      const dmgType = pickDmgType(this.damageType);
+      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
       if (Math.random() < 0.30) effects.push({ type: 'apply_status', target: targets[0], statusId: 'stun', stacks: 1 });
       return effects;
     }
@@ -601,6 +660,7 @@ export const abilities = {
   toss_vial: {
     id: 'toss_vial', name: 'Toss Vial', icon: '⚗️',
     tree: SkillType.ALCHEMY, tags: [AbilityTag.RANGED],
+    damageType: [DamageType.FIRE, DamageType.LIGHTNING, DamageType.COLD],
     ranks: [
       { rank: 1, cooldown: 2.5, cost: null, damage: 18, levelRequired: 1, autoLearn: true },
       { rank: 2, cooldown: 2.5, cost: null, damage: 26, levelRequired: 4, autoLearn: true },
@@ -608,8 +668,7 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
-      const types = ['fire', 'lightning', 'cold'];
-      const dmgType = types[Math.floor(Math.random() * types.length)];
+      const dmgType = pickDmgType(this.damageType);
       return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
@@ -631,6 +690,7 @@ export const abilities = {
   poison_vial: {
     id: 'poison_vial', name: 'Poison Vial', icon: '☠️',
     tree: SkillType.ALCHEMY, tags: [AbilityTag.RANGED],
+    damageType: [DamageType.NATURE],
     ranks: [
       { rank: 1, cooldown: 6.0, cost: 20, damage: 12, poisonStacks: 1, levelRequired: 5,  autoLearn: true },
       { rank: 2, cooldown: 5.5, cost: 20, damage: 18, poisonStacks: 2, levelRequired: 8,  autoLearn: true },
@@ -638,8 +698,9 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'nature' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: targets[0], statusId: 'poisoned', stacks: rank.poisonStacks },
       ];
     }
@@ -725,6 +786,7 @@ export const abilities = {
   void_tear: {
     id: 'void_tear', name: 'Void Tear', icon: '🌑',
     tree: SkillType.VOID, tags: [AbilityTag.SPELL],
+    damageType: [DamageType.VOID],
     ranks: [
       { rank: 1, cooldown: 5.0, cost: 25, damage: 20, levelRequired: 5,  autoLearn: true },
       { rank: 2, cooldown: 4.7, cost: 25, damage: 28, levelRequired: 8,  autoLearn: true },
@@ -732,8 +794,9 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'void' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: targets[0], statusId: 'void_vulnerability', stacks: 1 },
       ];
     }
@@ -742,6 +805,7 @@ export const abilities = {
   nullify: {
     id: 'nullify', name: 'Nullify', icon: '🚫',
     tree: SkillType.VOID, tags: [AbilityTag.SPELL],
+    damageType: [DamageType.ARCANA],
     ranks: [
       { rank: 1, cooldown: 7.0, cost: 35, damage: 24, levelRequired: 8,  autoLearn: true },
       { rank: 2, cooldown: 6.5, cost: 35, damage: 34, levelRequired: 11, autoLearn: true },
@@ -749,7 +813,8 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
-      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'arcana' }];
+      const dmgType = pickDmgType(this.damageType);
+      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
       if (Math.random() < 0.40) effects.push({ type: 'apply_status', target: targets[0], statusId: 'root', stacks: 1 });
       return effects;
     }
@@ -758,6 +823,7 @@ export const abilities = {
   entropic_pulse: {
     id: 'entropic_pulse', name: 'Entropic Pulse', icon: '🌀',
     tree: SkillType.VOID, tags: [AbilityTag.SPELL],
+    damageType: [DamageType.VOID],
     ranks: [
       { rank: 1, cooldown: 10.0, cost: 45, damage: 20, levelRequired: 11, autoLearn: true },
       { rank: 2, cooldown:  9.5, cost: 45, damage: 28, levelRequired: 13, autoLearn: true },
@@ -765,8 +831,9 @@ export const abilities = {
     ],
     targeting: 'all_enemies',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return targets.flatMap(t => {
-        const effects = [{ type: 'damage', target: t, amount: rank.damage, damageType: 'void' }];
+        const effects = [{ type: 'damage', target: t, amount: rank.damage, damageType: dmgType }];
         if (Math.random() < 0.30) effects.push({ type: 'apply_status', target: t, statusId: 'slow', stacks: 1 });
         return effects;
       });
@@ -776,6 +843,7 @@ export const abilities = {
   void_collapse: {
     id: 'void_collapse', name: 'Void Collapse', icon: '⚫',
     tree: SkillType.VOID, tags: [AbilityTag.SPELL],
+    damageType: [DamageType.VOID],
     ranks: [
       { rank: 1, cooldown: 12.0, cost: 55, damage: 36, levelRequired: 15, autoLearn: true },
       { rank: 2, cooldown: 11.0, cost: 55, damage: 50, levelRequired: 18, autoLearn: false },
@@ -783,9 +851,10 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       const stacks = targets[0]?.getStatus?.('void_vulnerability')?.stacks ?? 0;
       const amount = Math.round(rank.damage * (1 + stacks * 0.25));
-      return [{ type: 'damage', target: targets[0], amount, damageType: 'void' }];
+      return [{ type: 'damage', target: targets[0], amount, damageType: dmgType }];
     }
   },
 
@@ -822,6 +891,7 @@ export const abilities = {
   mace_strike: {
     id: 'mace_strike', name: 'Mace Strike', icon: '🔨',
     tree: SkillType.MACE, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 2.8, cost: null, damage: 18, levelRequired: 1, autoLearn: true },
       { rank: 2, cooldown: 2.8, cost: null, damage: 26, levelRequired: 4, autoLearn: true },
@@ -829,13 +899,15 @@ export const abilities = {
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
 
   reckless_smash: {
     id: 'reckless_smash', name: 'Reckless Smash', icon: '💢',
     tree: SkillType.MACE, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 5.5, cost: 30, damage: 22, levelRequired: 3,  autoLearn: true },
       { rank: 2, cooldown: 5.0, cost: 30, damage: 32, levelRequired: 6,  autoLearn: true },
@@ -843,7 +915,8 @@ export const abilities = {
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
-      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' }];
+      const dmgType = pickDmgType(this.damageType);
+      const effects = [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
       if (Math.random() < 0.40) effects.push({ type: 'apply_status', target: targets[0], statusId: 'stun', stacks: 1 });
       return effects;
     }
@@ -852,6 +925,7 @@ export const abilities = {
   bone_crack: {
     id: 'bone_crack', name: 'Bone Crack', icon: '💀',
     tree: SkillType.MACE, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 6.5, cost: 40, damage: 18, levelRequired: 5,  autoLearn: true },
       { rank: 2, cooldown: 6.0, cost: 40, damage: 26, levelRequired: 8,  autoLearn: true },
@@ -859,8 +933,9 @@ export const abilities = {
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: targets[0], statusId: 'weakness', stacks: 1 },
       ];
     }
@@ -869,6 +944,7 @@ export const abilities = {
   earth_shatter: {
     id: 'earth_shatter', name: 'Earth Shatter', icon: '🪨',
     tree: SkillType.MACE, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [
       { rank: 1, cooldown: 10.0, cost: 55, damage: 20, levelRequired: 8,  autoLearn: true },
       { rank: 2, cooldown:  9.5, cost: 55, damage: 28, levelRequired: 11, autoLearn: true },
@@ -876,13 +952,15 @@ export const abilities = {
     ],
     targeting: 'all_enemies',
     execute(caster, targets, rank) {
-      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'bludgeoning' }));
+      const dmgType = pickDmgType(this.damageType);
+      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: dmgType }));
     }
   },
 
   shocking_blow: {
     id: 'shocking_blow', name: 'Shocking Blow', icon: '⚡',
     tree: SkillType.MACE, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.LIGHTNING],
     ranks: [
       { rank: 1, cooldown: 6.0, cost: 65, damage: 28, levelRequired: 11, autoLearn: true },
       { rank: 2, cooldown: 5.5, cost: 65, damage: 40, levelRequired: 13, autoLearn: true },
@@ -890,13 +968,15 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'lightning' }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
 
   last_rites: {
     id: 'last_rites', name: 'Last Rites', icon: '⚰️',
     tree: SkillType.MACE, tags: [AbilityTag.MELEE],
+    damageType: [DamageType.TRUE],
     ranks: [
       { rank: 1, cooldown: 18.0, cost: 80, damage: 50, levelRequired: 15, autoLearn: true },
       { rank: 2, cooldown: 17.0, cost: 80, damage: 70, levelRequired: 18, autoLearn: false },
@@ -904,13 +984,15 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'true', ignoresGuard: true }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType, ignoresGuard: true }];
     }
   },
 
   storm_throw: {
     id: 'storm_throw', name: 'Storm Throw', icon: '🌩️',
     tree: SkillType.MACE, tags: [AbilityTag.RANGED],
+    damageType: [DamageType.LIGHTNING],
     ranks: [
       { rank: 1, cooldown: 5.0, cost: 50, damage: 26, levelRequired: 1, autoLearn: false },
       { rank: 2, cooldown: 4.7, cost: 50, damage: 36, levelRequired: 8, autoLearn: false },
@@ -918,8 +1000,9 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'lightning' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: targets[0], statusId: 'lightning_vulnerable', stacks: 1 },
       ];
     }
@@ -943,6 +1026,7 @@ export const abilities = {
   smite: {
     id: 'smite', name: 'Smite', icon: '✝️',
     tree: SkillType.HOLY, tags: [AbilityTag.SPELL],
+    damageType: [DamageType.LIGHTNING],
     ranks: [
       { rank: 1, cooldown: 2.5, cost: null, damage: 18, levelRequired: 1, autoLearn: true },
       { rank: 2, cooldown: 2.5, cost: null, damage: 26, levelRequired: 4, autoLearn: true },
@@ -950,7 +1034,8 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'lightning' }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
 
@@ -974,6 +1059,7 @@ export const abilities = {
   holy_flame: {
     id: 'holy_flame', name: 'Holy Flame', icon: '🕯️',
     tree: SkillType.HOLY, tags: [AbilityTag.SPELL],
+    damageType: [DamageType.FIRE],
     ranks: [
       { rank: 1, cooldown: 4.5, cost: 35, damage: 20, levelRequired: 5,  autoLearn: true },
       { rank: 2, cooldown: 4.2, cost: 35, damage: 28, levelRequired: 8,  autoLearn: true },
@@ -981,7 +1067,8 @@ export const abilities = {
     ],
     targeting: 'single_enemy_any',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'fire' }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
 
@@ -1016,6 +1103,7 @@ export const abilities = {
   divine_wrath: {
     id: 'divine_wrath', name: 'Divine Wrath', icon: '🌟',
     tree: SkillType.HOLY, tags: [AbilityTag.SPELL],
+    damageType: [DamageType.FIRE],
     ranks: [
       { rank: 1, cooldown: 10.0, cost: 80, damage: 26, levelRequired: 15, autoLearn: true },
       { rank: 2, cooldown:  9.5, cost: 80, damage: 36, levelRequired: 18, autoLearn: false },
@@ -1023,7 +1111,8 @@ export const abilities = {
     ],
     targeting: 'all_enemies',
     execute(caster, targets, rank) {
-      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'fire' }));
+      const dmgType = pickDmgType(this.damageType);
+      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: dmgType }));
     }
   },
 
@@ -1064,21 +1153,25 @@ export const abilities = {
   heavy_swing: {
     id: 'heavy_swing', name: 'Heavy Swing', icon: '⚔️',
     tags: [AbilityTag.MELEE],
+    damageType: [DamageType.SLASHING],
     ranks: [{ rank: 1, cooldown: 3.2, cost: null, damage: 16, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'slashing' }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
 
   bash: {
     id: 'bash', name: 'Bash', icon: '💢',
     tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [{ rank: 1, cooldown: 15.0, cost: null, damage: 8, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: targets[0], statusId: 'stun', stacks: 1 }
       ];
     }
@@ -1087,31 +1180,37 @@ export const abilities = {
   bolt_shot: {
     id: 'bolt_shot', name: 'Bolt Shot', icon: '🏹',
     tags: [AbilityTag.RANGED],
+    damageType: [DamageType.PIERCING],
     ranks: [{ rank: 1, cooldown: 2.8, cost: null, damage: 18, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_any',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'piercing' }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
 
   suppressing_fire: {
     id: 'suppressing_fire', name: 'Suppressing Fire', icon: '🎯',
     tags: [AbilityTag.RANGED],
+    damageType: [DamageType.PIERCING],
     ranks: [{ rank: 1, cooldown: 9.0, cost: null, damage: 10, levelRequired: 1, autoLearn: true }],
     targeting: 'all_player_front',
     execute(caster, targets, rank) {
-      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'piercing' }));
+      const dmgType = pickDmgType(this.damageType);
+      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: dmgType }));
     }
   },
 
   gnaw: {
     id: 'gnaw', name: 'Gnaw', icon: '🐀',
     tags: [AbilityTag.MELEE],
+    damageType: [DamageType.PIERCING],
     ranks: [{ rank: 1, cooldown: 1.8, cost: null, damage: 8, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'piercing' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: targets[0], statusId: 'bleeding', stacks: 1 }
       ];
     }
@@ -1120,21 +1219,25 @@ export const abilities = {
   swarm: {
     id: 'swarm', name: 'Swarm', icon: '💨',
     tags: [AbilityTag.MELEE],
+    damageType: [DamageType.PIERCING],
     ranks: [{ rank: 1, cooldown: 5.0, cost: null, damage: 5, levelRequired: 1, autoLearn: true }],
     targeting: 'all_player_front',
     execute(caster, targets, rank) {
-      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: 'piercing' }));
+      const dmgType = pickDmgType(this.damageType);
+      return targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: dmgType }));
     }
   },
 
   hammer_blow: {
     id: 'hammer_blow', name: 'Hammer Blow', icon: '🔨',
     tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [{ rank: 1, cooldown: 4.0, cost: null, damage: 28, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: targets[0], statusId: 'stun', stacks: 1 }
       ];
     }
@@ -1143,11 +1246,13 @@ export const abilities = {
   shield_slam_enemy: {
     id: 'shield_slam_enemy', name: 'Shield Slam', icon: '🛡️',
     tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [{ rank: 1, cooldown: 7.0, cost: null, damage: 18, guardStacks: 2, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: caster, statusId: 'guard', stacks: rank.guardStacks }
       ];
     }
@@ -1168,13 +1273,15 @@ export const abilities = {
   command_strike: {
     id: 'command_strike', name: 'Command Strike', icon: '⚔️',
     tags: [AbilityTag.MELEE],
+    damageType: [DamageType.SLASHING],
     ranks: [
       { rank: 1, cooldown: 3.0, cost: null, damage: 32, levelRequired: 1, autoLearn: true },
       { rank: 2, cooldown: 3.0, cost: null, damage: 42, levelRequired: 5, autoLearn: true }, // Phase 2
     ],
     targeting: 'single_player_front',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'slashing' }];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType }];
     }
   },
 
@@ -1195,11 +1302,13 @@ export const abilities = {
   choking_grip: {
     id: 'choking_grip', name: 'Choking Grip', icon: '✊',
     tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
     ranks: [{ rank: 1, cooldown: 9.0, cost: null, damage: 20, levelRequired: 1, autoLearn: true }],
     targeting: 'single_player_any',
     execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
       return [
-        { type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' },
+        { type: 'damage', target: targets[0], amount: rank.damage, damageType: dmgType },
         { type: 'apply_status', target: targets[0], statusId: 'root', stacks: 1 }
       ];
     }
@@ -1212,6 +1321,83 @@ export const abilities = {
     targeting: 'self',
     execute(caster, targets, rank) {
       return [{ type: 'apply_status', target: caster, statusId: 'haste', stacks: rank.hasteStacks }];
+    }
+  },
+
+  // ── Threat Abilities ─────────────────────────────────────────────────────
+  // Triggered when an enemy's threat bar reaches 100.  No cooldown, no cost.
+
+  desperate_flail: {
+    id: 'desperate_flail', name: 'Desperate Flail', icon: '💥',
+    tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
+    ranks: [{ rank: 1, cooldown: null, cost: null, damage: 25, ignoresGuard: true }],
+    targeting: 'single_player_any',
+    execute(caster, targets, rank) {
+      const t      = targets[Math.floor(Math.random() * targets.length)];
+      const dmgType = pickDmgType(this.damageType);
+      return [{ type: 'damage', target: t, amount: rank.damage, damageType: dmgType, ignoresGuard: rank.ignoresGuard }];
+    }
+  },
+
+  headshot: {
+    id: 'headshot', name: 'Headshot', icon: '🎯',
+    tags: [AbilityTag.RANGED],
+    damageType: [DamageType.PIERCING],
+    ranks: [{ rank: 1, cooldown: null, cost: null, damage: 35, stunChance: 0.5 }],
+    targeting: 'single_player_any',
+    execute(caster, targets, rank) {
+      const t      = targets[Math.floor(Math.random() * targets.length)];
+      const dmgType = pickDmgType(this.damageType);
+      const effects = [{ type: 'damage', target: t, amount: rank.damage, damageType: dmgType }];
+      if (Math.random() < rank.stunChance) effects.push({ type: 'apply_status', target: t, statusId: 'stun', stacks: 1 });
+      return effects;
+    }
+  },
+
+  wardens_wrath: {
+    id: 'wardens_wrath', name: "Warden's Wrath", icon: '🔨',
+    tags: [AbilityTag.MELEE],
+    damageType: [DamageType.BLUDGEONING],
+    ranks: [{ rank: 1, cooldown: null, cost: null, damage: 45, slowStacks: 2 }],
+    targeting: 'single_player_highest_hp',
+    execute(caster, targets, rank) {
+      const maxHpTarget = targets.reduce((a, b) => a.currentHP > b.currentHP ? a : b);
+      const dmgType     = pickDmgType(this.damageType);
+      return [
+        { type: 'damage', target: maxHpTarget, amount: rank.damage, damageType: dmgType },
+        ...targets.map(t => ({ type: 'apply_status', target: t, statusId: 'slow', stacks: rank.slowStacks })),
+      ];
+    }
+  },
+
+  rising_tide: {
+    id: 'rising_tide', name: 'Rising Tide', icon: '🌊',
+    tags: [AbilityTag.SPELL],
+    damageType: [DamageType.BLUDGEONING],
+    isPhaseTransition: true,
+    ranks: [{ rank: 1, cooldown: null, cost: null, damage: 35, stacks: 2, armorRestore: 60 }],
+    targeting: 'all_players',
+    execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
+      const effects = targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: dmgType }));
+      targets.forEach(t => effects.push({ type: 'apply_status', target: t, statusId: 'bleeding', stacks: rank.stacks }));
+      effects.push({ type: 'restore_armor', target: caster, amount: rank.armorRestore });
+      return effects;
+    }
+  },
+
+  deep_takes_all: {
+    id: 'deep_takes_all', name: 'The Deep Takes All', icon: '🌑',
+    tags: [AbilityTag.SPELL],
+    damageType: [DamageType.TRUE],
+    ranks: [{ rank: 1, cooldown: null, cost: null, damage: 50, slowStacks: 3 }],
+    targeting: 'all_players',
+    execute(caster, targets, rank) {
+      const dmgType = pickDmgType(this.damageType);
+      const effects = targets.map(t => ({ type: 'damage', target: t, amount: rank.damage, damageType: dmgType }));
+      targets.forEach(t => effects.push({ type: 'apply_status', target: t, statusId: 'slow', stacks: rank.slowStacks }));
+      return effects;
     }
   },
 };

@@ -975,6 +975,9 @@ body {
 .tooltip .tt-dmg { color: var(--text-red); }
 .tooltip .tt-res { color: var(--resource-energy); }
 .tooltip .tt-tags { display: flex; flex-wrap: wrap; gap: 3px; margin: 2px 0 4px; }
+.tooltip .tt-threat-label { color: var(--text-void); font-size: 0.72rem; margin: 1px 0 3px; letter-spacing: 0.04em; }
+.tooltip .tt-threat-cost  { color: var(--text-void); font-style: italic; }
+.tooltip .tt-phase-transition { color: var(--text-gold); font-size: 0.73rem; font-style: italic; margin-top: 2px; }
 
 /* ── Resistance indicator (shield badge on actor cards) ──────────────────── */
 .card-portrait-wrap {
