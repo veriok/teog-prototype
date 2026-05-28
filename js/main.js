@@ -774,7 +774,7 @@ const Game = {
       const before = prog.paragonHP[entry.paragonId] ?? maxHP;
       const isDead = before === 0;
       const healed = Math.min(maxHP, Math.round(before + maxHP * (ev.healPercent ?? 0.3)));
-      const gained = healed - before;
+      const gained = Math.round(healed - before);
       prog.paragonHP[entry.paragonId] = healed;
       healedParagons.push({ id: entry.paragonId, def, currentHP: healed, maxHP, gained, isDead });
     }
