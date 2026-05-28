@@ -19,7 +19,7 @@ export const paragons = {
     subtype: 'paragon', row: 'front',
     tags: ['humanoid'],
     skillTypes: ['sword', 'shield', 'flood'],
-    baseHP: 220, baseArmor: 0,
+    baseHP: 140, baseArmor: 0,
       resource: { type: 'resolve', max: 250, current: 0, regenPerSec: 0, decayPerSec: 0 },
     globalSpeed: 1.0,
     abilities: [
@@ -37,7 +37,7 @@ export const paragons = {
     subtype: 'paragon', row: 'back',
     tags: ['humanoid'],
     skillTypes: ['staff', 'alchemy', 'void'],
-    baseHP: 200, baseArmor: 0,
+    baseHP: 100, baseArmor: 0,
     resource: { type: 'energy', max: 100, current: 100, regenPerSec: 8, decayPerSec: 0 },
     globalSpeed: 1.0,
     abilities: [
@@ -57,7 +57,7 @@ export const paragons = {
     subtype: 'paragon', row: 'front',
     tags: ['humanoid'],
     skillTypes: ['mace', 'holy', 'shield'],
-    baseHP: 230, baseArmor: 0,
+    baseHP: 120, baseArmor: 0,
     resource: { type: 'rage', max: 100, current: 0, regenPerSec: 0, decayPerSec: 2 },
     globalSpeed: 1.0,
     abilities: [
@@ -77,7 +77,7 @@ export const paragons = {
     subtype: 'paragon', row: 'front',
     tags: ['humanoid'],
     skillTypes: ['sword', 'bow', 'glamour'],
-    baseHP: 210, baseArmor: 0,
+    baseHP: 110, baseArmor: 0,
       resource: { type: 'rage', max: 100, current: 0, regenPerSec: 0, decayPerSec: 2 },
     globalSpeed: 1.0,
     abilities: [
@@ -95,7 +95,7 @@ export const paragons = {
     subtype: 'paragon', row: 'back',
     tags: ['humanoid'],
     skillTypes: ['dagger', 'bow', 'alchemy'],
-    baseHP: 200, baseArmor: 0,
+    baseHP: 100, baseArmor: 0,
     resource: { type: 'energy', max: 100, current: 100, regenPerSec: 8, decayPerSec: 0 },
     globalSpeed: 1.0,
     abilities: [
@@ -113,7 +113,7 @@ export const paragons = {
     subtype: 'paragon', row: 'back',
     tags: ['humanoid'],
     skillTypes: ['mace', 'necromancy', 'fire'],
-    baseHP: 190, baseArmor: 0,
+    baseHP: 90, baseArmor: 0,
     resource: { type: 'energy', max: 100, current: 100, regenPerSec: 8, decayPerSec: 0 },
     globalSpeed: 1.0,
     abilities: [
