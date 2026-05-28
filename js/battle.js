@@ -302,6 +302,7 @@ export class BattleEngine {
     this.paragons = deployConfig.map(cfg => {
       const def   = DATA.actors[cfg.actorId];
       const actor = new ActorRuntime({ ...def, row: cfg.row });
+      actor.slotIndex = cfg.slotIndex ?? 0;
 
       // Attach skill progression data so stats.js and XP logic can read it.
       actor.skillLevels        = cfg.skillLevels        ?? {};
@@ -345,9 +346,12 @@ export class BattleEngine {
     });
     this.enemies  = [];
 
+    // Centre-out slot priority: middle first, then top, then bottom.
+    const ENEMY_SLOT_PRIORITY = [1, 0, 2];
+
     const rows = eventDef.enemyRows;
     Object.entries(rows).forEach(([row, ids]) => {
-      ids.forEach(id => {
+      ids.forEach((id, i) => {
         const baseDef = DATA.actors[id];
         const effectiveLevel = Math.max(1, locationLevel + (baseDef.levelAdjustment ?? 0));
 
@@ -369,6 +373,7 @@ export class BattleEngine {
           ...(baseDef.phase2Abilities ? { phase2Abilities: scaledPhase2 } : {}),
         };
         const actor = new ActorRuntime(def);
+        actor.slotIndex = ENEMY_SLOT_PRIORITY[i] ?? i;
         actor.level = effectiveLevel;
         equipActorItems(baseDef, actor);
         computeActorStats(actor);

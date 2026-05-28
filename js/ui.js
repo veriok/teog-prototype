@@ -24,10 +24,16 @@ export const UI = {
       const col = document.getElementById(colId);
       if (!col) return;
       col.querySelectorAll('.actor-card').forEach(c => c.remove());
+      // Build a slot-indexed array so each actor appears in its assigned position.
+      const slots = new Array(MAX_SLOTS).fill(null);
+      for (const actor of actors) {
+        const idx = actor.slotIndex ?? 0;
+        slots[Math.min(idx, MAX_SLOTS - 1)] = actor;
+      }
       for (let i = 0; i < MAX_SLOTS; i++) {
-        if (actors[i]) {
-          const card = this._buildCard(actors[i]);
-          this._cards.set(actors[i].id, card);
+        if (slots[i]) {
+          const card = this._buildCard(slots[i]);
+          this._cards.set(slots[i].id, card);
           col.appendChild(card);
         } else {
           col.appendChild(this._buildEmptyCard());
