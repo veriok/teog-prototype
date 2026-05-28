@@ -82,7 +82,6 @@ export const CURRENCY_CONFIG = Object.freeze({
 export const SkillType = Object.freeze({
   SWORD:   'sword',
   SHIELD:  'shield',
-  TACTICS: 'tactics',
   FIRE:    'fire',
   VOID:    'void',
   FLOOD:   'flood',

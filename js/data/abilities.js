@@ -234,13 +234,13 @@ export const abilities = {
     id: 'staff_strike', name: 'Staff Strike', icon: '🪄',
     tree: SkillType.STAFF, tags: [AbilityTag.MELEE],
     ranks: [
-      { rank: 1, cooldown: 2.2, cost: null, damage: 14, damageType: 'bludgeoning', levelRequired: 1,  autoLearn: true },
-      { rank: 2, cooldown: 2.0, cost: null, damage: 20, damageType: 'bludgeoning', levelRequired: 5,  autoLearn: true },
-      { rank: 3, cooldown: 1.8, cost: null, damage: 28, damageType: 'bludgeoning', levelRequired: 10, autoLearn: true },
+      { rank: 1, cooldown: 2.2, cost: null, damage: 14, levelRequired: 1,  autoLearn: true },
+      { rank: 2, cooldown: 2.0, cost: null, damage: 20, levelRequired: 5,  autoLearn: true },
+      { rank: 3, cooldown: 1.8, cost: null, damage: 28, levelRequired: 10, autoLearn: true },
     ],
     targeting: 'single_enemy_front',
     execute(caster, targets, rank) {
-      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: rank.damageType }];
+      return [{ type: 'damage', target: targets[0], amount: rank.damage, damageType: 'bludgeoning' }];
     }
   },
 
