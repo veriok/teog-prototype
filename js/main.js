@@ -7,7 +7,7 @@ import { BattleEngine }      from './battle.js';
 import { Inventory, EquippedItems } from './inventory.js';
 import { InventoryUI }       from './inventory-ui.js';
 import { collectBattleLoot, collectContainerLoot } from './loot.js';
-import { EventType }         from './enums.js';
+import { EventType, MAX_DEPLOYED_PARAGONS } from './enums.js';
 import { Cinematic }         from './cinematic.js';
 import { ParagonUI }         from './paragon-ui.js';
 import { checkRequirements } from './requirements.js';
@@ -493,6 +493,24 @@ const Game = {
 
       this.state.unlockedParagonIds.push(def.id);
       ParagonUI.ensureParagonState(def.id);
+
+      // Auto-deploy to preferred row if a slot is still open.
+      if (this.state.battlefield.length < MAX_DEPLOYED_PARAGONS) {
+        const preferredRow = def.row ?? 'front';
+        const otherRow     = preferredRow === 'front' ? 'back' : 'front';
+        let placed = false;
+        for (const row of [preferredRow, otherRow]) {
+          if (placed) break;
+          for (const index of [0, 1, 2]) {
+            if (!this.state.battlefield.some(b => b.row === row && b.index === index)) {
+              this.state.battlefield.push({ row, index, paragonId: def.id });
+              placed = true;
+              break;
+            }
+          }
+        }
+      }
+
       this._save();
       UI.log(`${def.name} has joined your cause.`, 'system');
       if (def.unlockCinematicId) await Cinematic.play(def.unlockCinematicId);
