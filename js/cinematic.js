@@ -20,6 +20,7 @@ export const Cinematic = {
   _typewriterInterval: null,      // image_caption typewriter interval
   _overlay:            null,      // root DOM element (built once)
   _escHandler:         null,      // keydown handler ref for removal
+  _imageDimensions:    {},        // src → {w, h} populated during preload
 
   // ── Public API ────────────────────────────────────────────────────────
 
@@ -64,7 +65,10 @@ export const Cinematic = {
     return Promise.allSettled(
       [...srcs].map(src => new Promise(resolve => {
         const img  = new Image();
-        img.onload  = resolve;
+        img.onload  = () => {
+          this._imageDimensions[src] = { w: img.naturalWidth, h: img.naturalHeight };
+          resolve();
+        };
         img.onerror = () => {
           console.warn(`[Cinematic] Image failed to load: ${src}`);
           resolve();
@@ -72,6 +76,42 @@ export const Cinematic = {
         img.src = src;
       }))
     );
+  },
+
+  // ── Aspect ratio helper ───────────────────────────────────────────────
+  // Reads natural image dimensions recorded during preload and applies
+  // them as an inline aspect-ratio on #cin-image-layer, overriding the
+  // CSS 3/2 default so portrait or non-standard images are never cropped.
+
+  _applyImageAspectRatio(src) {
+    if (!src) return;
+    const dims = this._imageDimensions[src];
+    if (!dims || dims.w === 0 || dims.h === 0) return;
+    const layer = document.getElementById('cin-image-layer');
+    const stage = document.getElementById('cin-stage');
+    if (!layer || !stage) return;
+
+    const stageW = stage.clientWidth;
+    const stageH = stage.clientHeight;
+    if (stageW === 0 || stageH === 0) return;
+
+    const imgAR   = dims.w / dims.h;
+    const stageAR = stageW / stageH;
+    let finalW, finalH;
+
+    if (imgAR >= stageAR) {
+      // Image wider relative to stage — fit to stage width
+      finalW = stageW;
+      finalH = Math.round(stageW / imgAR);
+    } else {
+      // Image taller relative to stage — fit to stage height
+      finalH = stageH;
+      finalW = Math.round(stageH * imgAR);
+    }
+
+    layer.style.width       = `${finalW}px`;
+    layer.style.height      = `${finalH}px`;
+    layer.style.aspectRatio = '';
   },
 
   // ── Build overlay DOM (idempotent) ────────────────────────────────────
@@ -194,6 +234,9 @@ export const Cinematic = {
     imgTop.style.opacity = '1';
     imgTop.classList.remove('ken-burns');
 
+    imageLayer.style.aspectRatio = '';  // revert to CSS 3/2 default
+    imageLayer.style.width       = '';
+    imageLayer.style.height      = '';
     imageLayer.style.display = 'none';
     titleCard.style.display  = 'none';
     titleCard.classList.remove('cin-title-visible');
@@ -214,6 +257,7 @@ export const Cinematic = {
     const captionText = document.getElementById('cin-caption-text');
     const dots        = document.getElementById('cin-dots');
 
+    this._applyImageAspectRatio(scene.imageA || scene.imageB);
     imageLayer.style.display = '';
     imgBottom.src            = scene.imageB || '';
     imgTop.src               = scene.imageA || '';
@@ -284,6 +328,7 @@ export const Cinematic = {
     const imageLayer = document.getElementById('cin-image-layer');
     const captionText = document.getElementById('cin-caption-text');
 
+    this._applyImageAspectRatio(scene.image);
     imageLayer.style.display = '';
     imgTop.src               = scene.image || '';
     imgTop.style.opacity     = '1';

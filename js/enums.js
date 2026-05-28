@@ -140,7 +140,6 @@ export const DamageType = Object.freeze({
   VOID:        'void',
   ARCANA:      'arcana',
   NATURE:      'nature',
-  DECAY:       'decay',
   // Special — bypasses armor and resistance entirely
   TRUE:        'true',
 });
@@ -149,7 +148,7 @@ export const DamageType = Object.freeze({
 export const DAMAGE_CATEGORY = Object.freeze({
   PHYSICAL:  'physical',   // covers slashing / piercing / bludgeoning
   ELEMENTAL: 'elemental',  // covers fire / cold / lightning
-  // void / arcana / nature / decay have no umbrella
+  // void / arcana / nature  have no umbrella
 });
 
 // Maps each leaf DamageType to its umbrella category (if any).

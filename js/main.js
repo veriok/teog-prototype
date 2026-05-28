@@ -52,6 +52,12 @@ const Game = {
     InventoryUI.init(this.inventory, this.state, () => this._save());
     ParagonUI.init(this.state, this.inventory, () => this.engine, () => this._save());
 
+    // Eagerly initialise paragon states so ability slots are populated
+    // before the first battle (lazy init only triggers on Paragons tab open).
+    for (const id of this.state.unlockedParagonIds) {
+      ParagonUI.ensureParagonState(id);
+    }
+
     this._initNavTabs();
     this._initBattleControls();
 
@@ -486,6 +492,7 @@ const Game = {
       if (!conditionMet) continue;
 
       this.state.unlockedParagonIds.push(def.id);
+      ParagonUI.ensureParagonState(def.id);
       this._save();
       UI.log(`${def.name} has joined your cause.`, 'system');
       if (def.unlockCinematicId) await Cinematic.play(def.unlockCinematicId);

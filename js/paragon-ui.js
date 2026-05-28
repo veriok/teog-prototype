@@ -183,6 +183,13 @@ export const ParagonUI = {
     });
   },
 
+  // ── Ensure paragon state is initialized ───────────────────────────────
+  // Call this for any paragon that may enter battle before the Paragons tab
+  // has been opened (which normally triggers lazy initialization).
+  ensureParagonState(paragonId) {
+    return _paragonState(paragonId);
+  },
+
   // ── Render ────────────────────────────────────────────────────────────
   render() {
     this._renderBattlefield();
