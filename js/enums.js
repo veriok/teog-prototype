@@ -63,6 +63,9 @@ export const ModifierType = Object.freeze({
   VOID:    'void',
   FLOOD:   'flood',
   STAFF:   'staff',
+  ALCHEMY: 'alchemy',
+  MACE:    'mace',
+  HOLY:    'holy',
   GENERIC: 'generic',
   ATTRIBUTE: 'attribute',
 });
@@ -86,6 +89,9 @@ export const SkillType = Object.freeze({
   VOID:    'void',
   FLOOD:   'flood',
   STAFF:   'staff',
+  ALCHEMY: 'alchemy',
+  MACE:    'mace',
+  HOLY:    'holy',
 });
 
 // ── Ability combat tags ────────────────────────────────────────────────────
@@ -97,7 +103,6 @@ export const AbilityTag = Object.freeze({
   SPELL:     'spell',
   DEFENSIVE: 'defensive',
   SUPPORT:   'support',
-  CAST:      'cast',
 });
 
 // ── Battlefield deployment cap ─────────────────────────────────────────────

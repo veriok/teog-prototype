@@ -42,7 +42,7 @@ export const paragons = {
     globalSpeed: 1.0,
     abilities: [
       { abilityId: 'staff_strike', rank: 1 },
-      { abilityId: '???',          rank: 1 },
+      { abilityId: 'toss_vial',    rank: 1 },
       { abilityId: 'void_bolt',    rank: 1 },
     ],
     unlockedByDefault:  false,
@@ -61,9 +61,9 @@ export const paragons = {
     resource: { type: 'rage', max: 100, current: 0, regenPerSec: 0, decayPerSec: 2 },
     globalSpeed: 1.0,
     abilities: [
-      { abilityId: '???', rank: 1 },
-      { abilityId: '???', rank: 1 },
-      { abilityId: '???', rank: 1 },
+      { abilityId: 'mace_strike',  rank: 1 },
+      { abilityId: 'smite',        rank: 1 },
+      { abilityId: 'shield_bash',  rank: 1 },
     ],
     unlockedByDefault:  false,
     unlockCondition:    { trigger: 'zone_conquered', locationId: 'flooded_cellars' }, // TODO: swap to 'chapel_of_ash'

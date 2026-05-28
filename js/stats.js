@@ -145,6 +145,17 @@ export function computeHitDamage(baseDmg, ctx) {
     if (!_matchesCondition(entry.condition, ctx)) continue;
     dmg = _applyEffect(dmg, entry, ctx);
   }
+
+  // ── Status-effect step ────────────────────────────────────────────────
+  // weakness on attacker: reduces outgoing damage 8% per stack
+  const weakness = ctx.attacker?.getStatus?.('weakness');
+  if (weakness) dmg *= (1 - weakness.stacks * 0.08);
+  // energize on attacker: flat bonus to lightning damage
+  if (ctx.damageType === 'lightning') {
+    const energize = ctx.attacker?.getStatus?.('energize');
+    if (energize) dmg += energize.stacks * 8;
+  }
+
   return Math.max(0, Math.round(dmg));
 }
 

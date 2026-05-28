@@ -117,10 +117,18 @@ export class ActorRuntime {
     }
     let resistVal = keyword != null ? (RESISTANCE_VALUE[keyword] ?? 0) : 0;
 
-    // 2. void_exposed: use active entry's effectiveValuePerStack (strongest-wins entry)
-    const voidExposed = this.getStatus('void_exposed');
-    if (voidExposed && damageType === 'void') {
-      resistVal -= voidExposed.stacks * voidExposed.effectiveValuePerStack;
+    // 2. Per-damage-type vulnerability statuses applied by abilities
+    const voidVuln = this.getStatus('void_vulnerability');
+    if (voidVuln && damageType === 'void') {
+      resistVal -= voidVuln.stacks * voidVuln.effectiveValuePerStack;
+    }
+    const fireVuln = this.getStatus('fire_vulnerable');
+    if (fireVuln && damageType === 'fire') {
+      resistVal -= fireVuln.stacks * fireVuln.effectiveValuePerStack;
+    }
+    const lightningVuln = this.getStatus('lightning_vulnerable');
+    if (lightningVuln && damageType === 'lightning') {
+      resistVal -= lightningVuln.stacks * lightningVuln.effectiveValuePerStack;
     }
 
     // 3. Cap at 1.0 (IMMUNE); no floor clamp
@@ -239,12 +247,12 @@ export class ActorRuntime {
   // ── Resource helpers ──────────────────────────────────────────────────
   canAfford(cost) {
     if (!cost) return true;
-    return this.resource >= effectiveCost(this.resourceType, cost.amount);
+    return this.resource >= effectiveCost(this.resourceType, cost);
   }
 
   spendResource(cost) {
     if (!cost) return;
-    this.resource = Math.max(0, this.resource - effectiveCost(this.resourceType, cost.amount));
+    this.resource = Math.max(0, this.resource - effectiveCost(this.resourceType, cost));
   }
 
   // ── Armor computation ──────────────────────────────────────────────────
@@ -273,6 +281,9 @@ export class BattleEngine {
     this.speedMult   = 1;
 
     this._resolutionQueue = [];
+
+    // Event system for reactive combat triggers (retaliation, kill-restore, etc.)
+    this._listeners = { actor_damaged: [], actor_died: [] };
   }
 
   // ── Build actors ───────────────────────────────────────────────────────
@@ -286,7 +297,7 @@ export class BattleEngine {
   //   skillLevels:        { [skillType]: number },  // current level per tree
   //   equippedSkillTypes: string[],        // the two active skill panel trees
   // }
-  init(deployConfig, eventDef, locationLevel = 1, locationMods = []) {
+  init(deployConfig, eventDef, locationLevel = 1, locationMods = [], persistentCooldowns = {}) {
     this.locationMods = locationMods;
     this.paragons = deployConfig.map(cfg => {
       const def   = DATA.actors[cfg.actorId];
@@ -303,13 +314,17 @@ export class BattleEngine {
         if (!abDef) return null;
         const skillLevel = cfg.skillLevels?.[abDef.tree] ?? 1;
         const rankDef    = getRankForLevel(abDef, skillLevel);
+        const storedCD   = persistentCooldowns[cfg.actorId]?.[abDef.id];
         return {
           id: abDef.id, name: abDef.name, icon: abDef.icon,
           tags: abDef.tags ?? [], targeting: abDef.targeting,
           execute: abDef.execute.bind(abDef),
           currentRank: rankDef.rank, rankDef,
           maxCooldown: rankDef.cooldown,
-          currentCooldown: rankDef.cooldown * Math.random(),
+          currentCooldown: (abDef.persistentCooldown && storedCD != null)
+            ? storedCD
+            : rankDef.cooldown * Math.random(),
+          persistentCooldown: abDef.persistentCooldown || false,
           cost: rankDef.cost || null,
           isPassive: abDef.isPassive || false,
         };
@@ -363,7 +378,62 @@ export class BattleEngine {
     });
 
     this.allActors = [...this.paragons, ...this.enemies];
+    this._registerCombatListeners();
     this.log('The battle begins.', 'system');
+  }
+
+  // ── Event system ───────────────────────────────────────────────────────
+  _on(event, handler) {
+    this._listeners[event]?.push(handler);
+  }
+
+  _emit(event, payload) {
+    this._listeners[event]?.forEach(h => h(payload));
+  }
+
+  // Wire up reactive combat triggers. Called once from init().
+  _registerCombatListeners() {
+    // Retaliation: fire/lightning counter-damage when melee hit lands
+    this._on('actor_damaged', payload => {
+      if (!payload.abilityTags.includes('melee')) return;
+      const target = payload.target;
+      const caster = payload.caster;
+      if (!caster || caster.isDead) return;
+      for (const [statusId, dmgType] of [['fire_retaliation', 'fire'], ['lightning_retaliation', 'lightning']]) {
+        const entry = target.getStatus(statusId);
+        if (!entry || entry.stacks <= 0) continue;
+        this._applyEffect(target, {
+          type: 'damage', target: caster,
+          amount: entry.stacks * entry.effectiveValuePerStack,
+          damageType: dmgType, _abilityTags: [], _skipEvents: true,
+        }, `${entry.stacks} stack ${statusId.replace('_', ' ')}`);
+      }
+    });
+
+    // Kill-restore: restore resources to caster when a killing blow lands
+    this._on('actor_died', payload => {
+      const { caster, ability } = payload;
+      if (!ability?.restoreResourceOnKill || !caster || caster.isDead) return;
+      const restored = effectiveCost(caster.resourceType, ability.restoreResourceOnKill);
+      caster.resource = Math.min(caster.resourceMax, caster.resource + restored);
+      this.log(`<span class="actor-name">${caster.name}</span> restores <span class="val">${restored}</span> ${caster.resourceType} from the kill.`, 'heal');
+      UI.floatText(caster, `+${restored}`, 'heal');
+    });
+  }
+
+  // ── Persistent cooldown snapshot ────────────────────────────────────────
+  // Returns current cooldown values for all persistentCooldown:true abilities,
+  // keyed by actorId then abilityId. Call from Game._onBattleEnd() and Save.
+  getPersistentCooldowns() {
+    const result = {};
+    this.paragons.forEach(p => {
+      p.abilities.forEach(ab => {
+        if (!ab.persistentCooldown) return;
+        if (!result[p.defId]) result[p.defId] = {};
+        result[p.defId][ab.id] = ab.currentCooldown;
+      });
+    });
+    return result;
   }
 
   // ── Start / Stop ───────────────────────────────────────────────────────
@@ -430,7 +500,7 @@ export class BattleEngine {
           ab.currentCooldown <= 0 &&
           actor.canAfford(ab.cost) &&
           !ab.isPassive &&
-          !(ab.tag === 'melee' && actor.hasStatus('root'))
+          !(ab.tags?.includes('melee') && actor.hasStatus('root'))
         );
         if (ready.length > 0) {
           const chosen = this._aiChooseAbility(actor, ready);
@@ -452,8 +522,21 @@ export class BattleEngine {
     justDied.forEach(actor => {
       actor.isDead    = true;
       actor.currentHP = 0;
-      this.log(`${actor.name} has fallen.`, 'death');
-      this.onActorDied(actor);
+      actor._diedAt   = this.battleTime;
+
+      if (actor.isTemporary) {
+        // Temporary actors (conjured shadows) vanish silently — no log, no loot callback.
+        if (this.onTemporaryActorRemoved) this.onTemporaryActorRemoved(actor);
+      } else {
+        this.log(`${actor.name} has fallen.`, 'death');
+        this.onActorDied(actor);
+        this._emit('actor_died', {
+          actor,
+          caster:  actor._lastHitBy?.caster,
+          ability: actor._lastHitBy?.ability,
+        });
+      }
+
       // Grant Resolve to living resolve-type paragons when an enemy is vanquished.
       if (actor.subtype === 'enemy') {
         const gain = actor.subclass === 'boss'  ? 50 :
@@ -462,7 +545,14 @@ export class BattleEngine {
           if (!p.isDead && p.resourceType === 'resolve')
             p.resource = Math.min(p.resourceMax, p.resource + gain);
         });
-      }    });
+      }
+    });
+
+    // Purge temporary dead actors from active arrays
+    if (justDied.some(a => a.isTemporary)) {
+      this.paragons  = this.paragons.filter(p => !(p.isTemporary && p.isDead));
+      this.allActors = this.allActors.filter(a => !(a.isTemporary && a.isDead));
+    }
 
     // ── Phase 4: Victory check ────────────────────────────────────────────
     if (!this.ended) {
@@ -508,6 +598,7 @@ export class BattleEngine {
         // Decrement 1 stack; remove entry when exhausted.
         entry.stacks -= 1;
         if (entry.stacks <= 0) {
+          if (def.onExpire) def.onExpire(this, actor);
           actor.statuses.delete(key);
         }
       }
@@ -566,8 +657,28 @@ export class BattleEngine {
     effects.forEach(fx => {
       const target = fx.target;
       if (!target || target.isDead) return;
-      // Forward ability tags so computeHitDamage can evaluate conditional mods.
-      fx._abilityTags = ability.tags ?? [];
+      // Forward ability tags and source ability reference for event system.
+      fx._abilityTags    = ability.tags ?? [];
+      fx._sourceAbility  = ability;
+
+      // Evasion check (blur status) — per-tag, independent rolls for ranged and spell
+      if (fx.type === 'damage') {
+        const blurEntry = target.getStatus('blur');
+        if (blurEntry && blurEntry.stacks > 0) {
+          let evaded = false;
+          for (const evadeTag of ['ranged', 'spell']) {
+            if (fx._abilityTags.includes(evadeTag) && Math.random() < blurEntry.stacks * 0.10) {
+              evaded = true;
+              break;
+            }
+          }
+          if (evaded) {
+            this.log(`<span class="actor-name">${target.name}</span> evades <span class="ability-name">${ability.name}</span>.`, 'status');
+            return;
+          }
+        }
+      }
+
       this._applyEffect(actor, fx, ability.name);
     });
 
@@ -680,6 +791,16 @@ export class BattleEngine {
             const critPrefix = ctx.isCrit ? 'CRIT! ' : '';
             this.log(`${critPrefix}<span class="actor-name">${target.name}</span> takes <span class="val">${totalShown}</span> ${dtype} damage${armorHit > 0 ? ` (${armorHit} to armor)` : ''}${sourceName ? ` from <span class="ability-name">${sourceName}</span>` : ''}.`, 'damage');
             UI.floatText(target, `-${totalShown}`, 'damage');
+            // Track for kill-attribution and retaliation
+            target._lastHitBy = { caster, ability: effect._sourceAbility };
+            if (!effect._skipEvents) {
+              this._emit('actor_damaged', {
+                target, caster, damageType: dtype,
+                abilityTags: effect._abilityTags ?? [],
+                amount: totalShown,
+                ability: effect._sourceAbility,
+              });
+            }
           }
 
           UI.flashCard(target, 'hit-flash');
@@ -729,6 +850,83 @@ export class BattleEngine {
         if (target.resourceType === 'threat') {
           target.resource = Math.min(target.resourceMax, target.resource + effect.amount);
         }
+        break;
+      }
+
+      case 'restore_resource': {
+        const before = target.resource;
+        target.resource = Math.min(target.resourceMax, target.resource + effect.amount);
+        const gained = Math.round(target.resource - before);
+        if (gained > 0) {
+          this.log(`<span class="actor-name">${target.name}</span> restores <span class="val">${gained}</span> ${target.resourceType}.`, 'heal');
+          UI.floatText(target, `+${gained}`, 'heal');
+        }
+        break;
+      }
+
+      case 'damage_armor': {
+        const aDmg = Math.min(target.currentArmor, effect.amount);
+        target.currentArmor = Math.max(0, target.currentArmor - effect.amount);
+        if (aDmg > 0) {
+          this.log(`<span class="actor-name">${target.name}</span>'s armor corrodes for <span class="val">${aDmg}</span>${sourceName ? ` from <span class="ability-name">${sourceName}</span>` : ''}.`, 'damage');
+          UI.floatText(target, `-${aDmg}`, 'armor');
+          UI.flashCard(target, 'hit-flash');
+        }
+        break;
+      }
+
+      case 'revive': {
+        if (!target.isDead) break;
+        target.isDead     = false;
+        target.currentHP  = Math.floor(target.maxHP * (effect.fraction ?? 0.25));
+        target.clearAllStatuses();
+        target.abilities.forEach(ab => {
+          if (!ab.persistentCooldown) ab.currentCooldown = ab.maxCooldown * Math.random();
+        });
+        this.log(`<span class="actor-name">${target.name}</span> has been revived!`, 'heal');
+        UI.floatText(target, 'Revived!', 'heal');
+        UI.flashCard(target, 'heal-flash');
+        if (this.onActorRevived) this.onActorRevived(target);
+        break;
+      }
+
+      case 'conjure_shadow': {
+        const original = effect.target;
+        if (original.subclass === 'elite' || original.subclass === 'boss') {
+          this.log(`Cannot conjure a shadow of an elite or boss.`, 'status');
+          break;
+        }
+        const shadowDef = {
+          ...original,
+          id:        `shadow_${original.defId ?? original.id}_${ActorRuntime._nextId}`,
+          name:      `Shadow ${original.name}`,
+          subtype:   'paragon',
+          row:       'front',
+          baseHP:    Math.max(1, Math.floor(original.maxHP * 0.10)),
+          baseArmor: 0,
+          resource:  { type: 'none', max: 0, current: 0, regenPerSec: 0, decayPerSec: 0 },
+          lootTable: null,
+          specialAttack: null,
+          phase2SpecialAttack: null,
+          phase2Abilities: null,
+        };
+        const shadow = new ActorRuntime(shadowDef);
+        shadow.isTemporary = true;
+        shadow.currentHP   = shadow.maxHP;
+        // Remap enemy-targeting to paragon-side targeting so the shadow attacks enemies
+        const flip = {
+          'single_player_front': 'single_enemy_front',
+          'single_player_any':   'single_enemy_any',
+          'all_players':         'all_enemies',
+          'all_player_front':    'cleave',
+        };
+        shadow.abilities.forEach(ab => { ab.targeting = flip[ab.targeting] ?? ab.targeting; });
+        shadow.applyStatus('shadow_fade', 5, caster);
+        this.paragons.push(shadow);
+        this.allActors.push(shadow);
+        this.log(`<span class="actor-name">${caster.name}</span> conjures <span class="ability-name">Shadow ${original.name}</span>!`, 'special');
+        UI.floatText(caster, 'Shadow conjured!', 'heal');
+        if (this.onConjure) this.onConjure(shadow);
         break;
       }
     }
@@ -826,6 +1024,25 @@ export class BattleEngine {
         if (!primary) return [];
         const adjacent = aliveEnemies.find(e => e !== primary);
         return adjacent ? [primary, adjacent] : [primary];
+      }
+      case 'cleave': {
+        const frontRow = aliveEnemies.filter(e => e.row === 'front');
+        return frontRow.length > 0 ? frontRow : aliveEnemies.filter(e => e.row === 'back');
+      }
+      case 'random_enemy': {
+        return aliveEnemies.length > 0
+          ? [aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)]]
+          : [];
+      }
+      case 'two_lowest_hp_allies': {
+        const sorted = [...aliveParagons].sort((a, b) => a.currentHP - b.currentHP);
+        return sorted.slice(0, 2);
+      }
+      case 'dead_ally': {
+        const dead = this.paragons.filter(p => p.isDead && !p.isTemporary);
+        if (dead.length === 0) return [];
+        // Most recently fallen (highest _diedAt timestamp)
+        return [dead.reduce((a, b) => (a._diedAt ?? 0) > (b._diedAt ?? 0) ? a : b)];
       }
       default: {
         const opp = caster.subtype === 'paragon' ? aliveEnemies : aliveParagons;
